@@ -29,7 +29,7 @@ L'obiettivo è quello di creare un applicazione  dove i dati verranno inseriti e
 8. 	Deploy del sistema funzionante con hardware e validazione
 
 ### Diagramma
- 
+![GitHub Logo](/Diagram.png)
 
 ### :man_office_worker: Autori
 - [Marco Caminonni](https://github.com/BackCamino)
