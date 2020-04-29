@@ -1,6 +1,13 @@
 # Termostato Intelligente via Blockchain 
 
-### Specifica progetto
+## Guida
+- [Specifica Progetto]()
+- [Steps]()
+- [Diagramma]()
+- [Autori]()
+
+
+### Specifica Progetto 
 
 Il progetto consiste nella realizzazione un termostato intelligente integrando soluzioni hardware IoT con soluzioni software di controllo basate su Blockchain.
 La fase iniziale prevede la modellazione dell'intero processo del termostato tramite modelli di coreografia dove si evidenzierà lo scambio di messaggi tra i componenti hardware e software. 
@@ -21,7 +28,8 @@ L'obiettivo è quello di creare un applicazione  dove i dati verranno inseriti e
 7. 	Creazione del prototipo del sistema di termostato intelligente
 8. 	Deploy del sistema funzionante con hardware e validazione
 
-
+### Diagramma
+ 
 
 ### Autori
 - [Marco Caminonni](https://github.com/BackCamino)
