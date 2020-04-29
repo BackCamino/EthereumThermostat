@@ -24,6 +24,5 @@ L'obiettivo è quello di creare un applicazione  dove i dati verranno inseriti e
 
 
 ### Autori
-@BackCamino
-
-@EmmanueleBollino
+[Marco Caminonni](https://github.com/BackCamino)
+[Emmanuele Bollino](https://github.com/EmmanueleBollino)
