@@ -1,4 +1,9 @@
-# Termostato Intelligente via Blockchain 
+<img align="left" height="100" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Ethereum_logo_2014.svg/628px-Ethereum_logo_2014.svg.png">
+<img align="right" height="100" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Ethereum_logo_2014.svg/628px-Ethereum_logo_2014.svg.png">
+  
+<h1 align="center">Termostato Intelligente via Blockchain <h1>      
+
+
 
 ## :blue_book: Guida
 - [Specifica Progetto](#pencil-specifica-progetto)
@@ -29,7 +34,7 @@ L'obiettivo è quello di creare un applicazione  dove i dati verranno inseriti e
 8. 	Deploy del sistema funzionante con hardware e validazione
 
 ### :straight_ruler: Diagramma
-![GitHub Logo](/Diagram.png)
+![Diagram](/Diagram.png)
 
 ### :man_office_worker: Autori
 - [Marco Caminonni](https://github.com/BackCamino)
