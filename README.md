@@ -1,10 +1,10 @@
 # Termostato Intelligente via Blockchain 
 
 ## Guida
-- [Specifica Progetto]()
-- [Steps]()
-- [Diagramma]()
-- [Autori]()
+- [Specifica Progetto](#Specifica-Progetto)
+- [Steps](#Steps)
+- [Diagramma](#Diagramma)
+- [Autori](#Autori)
 
 
 ### Specifica Progetto 
