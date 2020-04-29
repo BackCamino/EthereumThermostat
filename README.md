@@ -1,10 +1,10 @@
 # Termostato Intelligente via Blockchain 
 
 ## :blue_book: Guida
-- [Specifica Progetto](#:pencil:-Specifica-Progetto)
-- [Steps](#:dart:-Steps)
-- [Diagramma](#:straight_ruler:-Diagramma)
-- [Autori](#:man_office_worker:-Autori)
+- [Specifica Progetto](#Specifica-Progetto)
+- [Steps](#Steps)
+- [Diagramma](#Diagramma)
+- [Autori](#Autori)
 
 
 ### :pencil: Specifica Progetto 
