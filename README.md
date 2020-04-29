@@ -3,7 +3,7 @@
   
 <h1 align="center">Termostato Intelligente via Blockchain <h1>      
 
-
+<br>
 
 ## :blue_book: Guida
 - [Specifica Progetto](#pencil-specifica-progetto)
@@ -12,7 +12,7 @@
 - [Autori](#man_office_worker-autori)
 
 
-### :pencil: Specifica Progetto 
+## :pencil: Specifica Progetto 
 
 Il progetto consiste nella realizzazione un termostato intelligente integrando soluzioni hardware IoT con soluzioni software di controllo basate su Blockchain.
 La fase iniziale prevede la modellazione dell'intero processo del termostato tramite modelli di coreografia dove si evidenzierà lo scambio di messaggi tra i componenti hardware e software. 
@@ -23,7 +23,7 @@ Una volta definite le scelte progettuali si passerà alla sua implementazione pr
 L'interazione tra il termostato e la blockchain avverrà sfruttando le funzionalità già esistenti di ChorChain e, dove necessario, la creazione di nuove. In particolare, si dovrà fare uno studio preliminare sulla piattaforma, così da capire la soluzione migliore, come l’aggiunta di servizi richiamabili dal sistema IoT o la creazione di un framework ad-hoc per la comunicazione con la blockchain. 
 L'obiettivo è quello di creare un applicazione  dove i dati verranno inseriti e letti dalla blockchain, che andrà ad influenzare attivamente i processi decisionali e le operazioni previste dal modello. Un esempio può essere trovato nel modello riportato di seguito, dove le operazioni di “start heating” e “stop heating” dipendono dalla temperatura emessa in precedenza. Nel nuovo sistema questo valore dovrà essere letto direttamente dalla blockchain che andrà così a influenzare l'operazione successiva.
 
-### :dart: Steps
+## :dart: Steps
 1. 	Analisi dei requisiti del sistema di termostato intelligente
 2. 	Studio della piattaforma ChorChain per capire quali sono le funzionalità da usare già presenti  e quali possono essere aggiunte per un efficiente integrazione
 3.  Analisi dell’hardware necessario
@@ -33,9 +33,9 @@ L'obiettivo è quello di creare un applicazione  dove i dati verranno inseriti e
 7. 	Creazione del prototipo del sistema di termostato intelligente
 8. 	Deploy del sistema funzionante con hardware e validazione
 
-### :straight_ruler: Diagramma
+## :straight_ruler: Diagramma
 ![Diagram](/Diagram.png)
 
-### :man_office_worker: Autori
+## :man_office_worker: Autori
 - [Marco Caminonni](https://github.com/BackCamino)
 - [Emmanuele Bollino](https://github.com/EmmanueleBollino)
