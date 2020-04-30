@@ -3,12 +3,10 @@ pragma solidity^0.6.1;
 import './Thermostat.sol';
 
 contract Sensor{
-    Thermostat private thermostat;
     address owner;
     int16 temp;
   
-    constructor (address thermostatAddr,int16 initialTemp)public{
-        thermostat = Thermostat(thermostatAddr);
+    constructor (int16 initialTemp)public{  
         owner=msg.sender;
         temp=initialTemp;
        
