@@ -39,3 +39,4 @@ L'obiettivo è quello di creare un applicazione  dove i dati verranno inseriti e
 ## :man_office_worker: Autori
 - [Marco Caminonni](https://github.com/BackCamino)
 - [Emmanuele Bollino](https://github.com/EmmanueleBollino)
+- [Diego Diomedi](https://github.com/diegodiome)
