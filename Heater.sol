@@ -1,31 +1,57 @@
-pragma solidity^0.6.1;
+pragma solidity ^0.6.1;
 
 import "./Status.sol";
+import "./Thermostat.sol";
 
-contract Heater{
-    Status status;
-    address owner;
 
-    constructor()public{
-        status=Status.OFF;
-        owner=msg.sender;
+contract Heater {
+    Thermostat private thermostat;
+    Status private status;
+    address private owner;
+
+    constructor() public {
+        status = Status.OFF;
+        owner = msg.sender;
     }
 
-    modifier onlyHeater(){
-        require(owner==msg.sender,"Only sensor can call this function");
+    modifier notError() {
+        require(status != Status.ERR, "Problems on the Heater");
         _;
     }
-    
-    function setON() public onlyHeater{
-        status=Status.ON;
+
+    modifier onlyOwner() {
+        require(owner == msg.sender, "Only owner can call this function");
+        _;
     }
 
-    function setOFF() public onlyHeater{
-        status=Status.OFF;
+    event StatusChanged(Status _status);
+
+    event RequestStatusChange(Status _status);
+
+    /// the heater (gateway) sets his actual status
+    function setStatus(Status _status) public onlyOwner {
+        status = _status;
+        emit StatusChanged(status);
+        if (address(thermostat) != address(0))
+            thermostat.heaterStatusChanged(status);
     }
-    
-    function getStatus() public view onlyHeater returns(Status){
+
+    /// asks the heater to go on
+    function setOn() external {
+        emit RequestStatusChange(Status.ON);
+    }
+
+    /// asks the heater to go off
+    function setOff() external {
+        emit RequestStatusChange(Status.OFF);
+    }
+
+    function getStatus() public view onlyOwner returns (Status) {
         return status;
     }
-    
+
+    function setThermostat(address thermostatAddress) public onlyOwner {
+        require(thermostatAddress != address(0), "Address not valid");
+        thermostat = Thermostat(thermostatAddress);
+    }
 }
