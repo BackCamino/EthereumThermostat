@@ -6,11 +6,10 @@ import "./Thermostat.sol";
 
 contract Heater {
     Thermostat private thermostat;
-    Status private status;
+    Status private status = Status.OFF;
     address private owner;
 
     constructor() public {
-        status = Status.OFF;
         owner = msg.sender;
     }
 
@@ -20,7 +19,7 @@ contract Heater {
     }
 
     modifier onlyOwner() {
-        require(owner == msg.sender, "Only owner can call this function");
+        require(owner == msg.sender, "Only owner allowed");
         _;
     }
 

@@ -5,6 +5,10 @@ import "./Heater.sol";
 import "./Status.sol";
 
 
+/*
+Contratti multipli
+*/
+
 contract Thermostat {
     Heater private heater;
     Sensor private sensor;
@@ -19,8 +23,13 @@ contract Thermostat {
         threshold = _threshold;
     }
 
-    modifier onlyOn() {
-        require(status == Status.ON, "the devise must be on");
+    modifier mustBeOn() {
+        require(status == Status.ON, "Thermostat must be ON");
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only Thermostat owner allowed");
         _;
     }
 
@@ -29,16 +38,8 @@ contract Thermostat {
         _;
     }
 
-    modifier onlyThermostat() {
-        require(msg.sender == owner, "Only Thermostat can do this function");
-        _;
-    }
-
     modifier onlyHeater() {
-        require(
-            msg.sender == address(heater),
-            "Only Heater can do this function"
-        );
+        require(msg.sender == address(heater), "Only Heater allowed");
         _;
     }
 
@@ -48,21 +49,22 @@ contract Thermostat {
 
     event TempChanged(int16 _temp);
 
-    function setSensor(address sensorAddress) public onlyThermostat {
+    function setSensor(address sensorAddress) public onlyOwner {
         require(sensorAddress != address(0), "Address not valid");
         sensor = Sensor(sensorAddress);
     }
 
-    function setHeater(address heaterAddress) public onlyThermostat {
+    function setHeater(address heaterAddress) public onlyOwner {
         require(heaterAddress != address(0), "Address not valid");
         heater = Heater(heaterAddress);
     }
 
-    function heaterStatusChanged(Status _status) external onlyOn {
+    function heaterStatusChanged(Status _status) external mustBeOn {
         emit HeaterStatusChanged(_status);
     }
 
-    function setStatus(Status _status) public onlyThermostat {
+    /// set the thermostat ON or OFF
+    function setStatus(Status _status) public onlyOwner {
         if (status != _status) emit ThermostatStatusChanged(_status);
         status = _status;
     }
@@ -71,27 +73,28 @@ contract Thermostat {
         return status;
     }
 
-    function getTemp() public view onlyOn returns (int16) {
+    function getTemp() public view mustBeOn returns (int16) {
         return sensor.getTemp();
     }
 
     /// notifies the thermostat that the temperature has changed
-    function tempChanged(int16 _temp) public onlyOn {
+    function tempChanged(int16 _temp) public mustBeOn onlySensor {
         update(_temp, threshold);
+        emit TempChanged(_temp);
     }
 
-    function setThreshold(int16 _threshold) public {
+    /// sets a new threshold temperature
+    function setThreshold(int16 _threshold) public mustBeOn onlyOwner {
         threshold = _threshold;
         update(sensor.getTemp(), threshold);
     }
 
-    function update(int16 _temp, int16 _threshold) private {
-        if (_threshold > _temp) heater.setOn();
-        else heater.setOff();
-        emit TempChanged(_temp);
+    function getThreshold() public view mustBeOn returns (int16) {
+        return threshold;
     }
 
-    function getThreshold() public view returns (int16) {
-        return threshold;
+    function update(int16 _temp, int16 _threshold) private mustBeOn {
+        if (_threshold > _temp) heater.setOn();
+        else heater.setOff();
     }
 }
