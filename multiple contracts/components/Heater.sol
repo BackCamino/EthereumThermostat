@@ -1,11 +1,12 @@
 pragma solidity ^0.6.1;
 
-import "./Status.sol";
 import "./Thermostat.sol";
+import "../helpers/Owned.sol";
+import "../helpers/PubSub.sol";
+import "../helpers/Switchable.sol";
 
 
-contract Heater {
-    Thermostat private thermostat;
+contract Heater is Publisher, Owned, Switchable {
     Status private status = Status.OFF;
     address private owner;
 
@@ -15,11 +16,6 @@ contract Heater {
 
     modifier notError() {
         require(status != Status.ERR, "Problems on the Heater");
-        _;
-    }
-
-    modifier onlyOwner() {
-        require(owner == msg.sender, "Only owner allowed");
         _;
     }
 
