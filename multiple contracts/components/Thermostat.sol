@@ -5,8 +5,10 @@ import "./Heater.sol";
 import "../helpers/Owned.sol";
 import "../helpers/PubSub.sol";
 import "../helpers/Switchable.sol";
+
 import {StringUtils} from "../helpers/StringUtils.sol";
 
+// TODO setStatus onlyOwner
 
 contract Thermostat is Subscriber, Owned, Switchable(Status.OFF) {
     Heater private heater;
@@ -18,14 +20,22 @@ contract Thermostat is Subscriber, Owned, Switchable(Status.OFF) {
         threshold = _threshold;
     }
 
-    function setSensor(address sensorAddress) public onlyOwner {
-        require(sensorAddress != address(0), "Address not valid");
+    function setSensor(address sensorAddress)
+        public
+        onlyOwner
+        addressValidator(sensorAddress)
+    {
         sensor = Sensor(sensorAddress);
+        sensor.subscribe(this);
     }
 
-    function setHeater(address heaterAddress) public onlyOwner {
-        require(heaterAddress != address(0), "Address not valid");
+    function setHeater(address heaterAddress)
+        public
+        onlyOwner
+        addressValidator(heaterAddress)
+    {
         heater = Heater(heaterAddress);
+        heater.subscribe(this);
     }
 
     function heaterStatusChanged(Status _status)

@@ -13,6 +13,11 @@ abstract contract Owned {
         _;
     }
 
+    modifier addressValidator(address _address) {
+        require(_address != address(0), "Address not valid");
+        _;
+    }
+
     modifier onlyOwner {
         require(msg.sender == owner, "Only owner allowed");
         _;

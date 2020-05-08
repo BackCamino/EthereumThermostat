@@ -21,6 +21,11 @@ abstract contract Switchable {
         _;
     }
 
+    modifier notError() {
+        require(status != Status.ERR, "Problems on the device");
+        _;
+    }
+
     event StatusChanged(Status _status);
 
     function setStatus(Status _status) public virtual {
