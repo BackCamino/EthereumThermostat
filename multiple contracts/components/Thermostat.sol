@@ -8,6 +8,7 @@ import "../helpers/Switchable.sol";
 
 import {StringUtils} from "../helpers/StringUtils.sol";
 
+
 // TODO setStatus onlyOwner
 
 contract Thermostat is Subscriber, Owned, Switchable(Status.OFF) {
@@ -43,21 +44,26 @@ contract Thermostat is Subscriber, Owned, Switchable(Status.OFF) {
         statusOrNothing(Status.ON)
     {
         //TODO
-        //emit HeaterStatusChanged(_status);
+        //emit HeaterStatusChanged(_status); //TODO evento in thermostat o solo in heater
     }
 
-    function getTemp() public view statusMustBe(Status.ON) returns (int16) {
+    function getTemp()
+        public
+        view
+        statusMustBe(Status.ON)
+        returns (int16 _temp)
+    {
         return sensor.getTemp();
     }
 
     /// notifies the thermostat that the temperature has changed
     function tempChanged(int16 _temp)
-        public
+        private
         statusOrNothing(Status.ON)
         onlyAddress(address(sensor))
     {
         update(_temp, threshold);
-        //emit TempChanged(_temp);
+        //emit TempChanged(_temp); //TODO evento in thermostat o solo in sensor
     }
 
     /// sets a new threshold temperature
@@ -88,6 +94,7 @@ contract Thermostat is Subscriber, Owned, Switchable(Status.OFF) {
     }
 
     function accept(string memory _event, bytes32 value) public override {
+        // check which event is called
         if (StringUtils.compareStrings(_event, "tempChanged"))
             tempChanged(int16(int256(value)));
         else if (StringUtils.compareStrings(_event, "heaterStatusChanged"))

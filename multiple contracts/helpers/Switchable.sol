@@ -3,6 +3,8 @@ pragma solidity ^0.6.1;
 
 enum Status {OFF, ON, ERR}
 
+
+/// Represents a contract with a switchable Status
 abstract contract Switchable {
     Status private status;
 

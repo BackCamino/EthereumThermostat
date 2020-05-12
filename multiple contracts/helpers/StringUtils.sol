@@ -6,7 +6,8 @@ library StringUtils {
         string memory firstString,
         string memory secondString
     ) public pure returns (bool) {
-        return (keccak256(abi.encodePacked((firstString))) ==
-            keccak256(abi.encodePacked((secondString))));
+        return
+            keccak256(abi.encodePacked((firstString))) ==
+            keccak256(abi.encodePacked((secondString)));
     }
 }

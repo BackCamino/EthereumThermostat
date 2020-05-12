@@ -7,7 +7,7 @@ import "../helpers/PubSub.sol";
 contract Sensor is Publisher, Owned {
     int16 private temp;
 
-    /// an initial temp must be provided
+    /// Construct a temperature sensor with an initial temp
     constructor(int16 _temp) public {
         temp = _temp;
     }
@@ -20,10 +20,4 @@ contract Sensor is Publisher, Owned {
         temp = _temp;
         publish("tempChanged", bytes32(int256(temp)));
     }
-
-    //rimpiazzato da SubscribeAddress
-    //function setThermostat(address thermostatAddress) public onlyOwner {
-    //    require(thermostatAddress != address(0), "Address not valid");
-    //    thermostat = Thermostat(thermostatAddress);
-    // }
 }

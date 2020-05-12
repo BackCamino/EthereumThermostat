@@ -28,4 +28,6 @@ abstract contract Publisher {
     }
 
     //TODO function to remove subscriber
+
+    //TODO modifier only subscriber
 }
