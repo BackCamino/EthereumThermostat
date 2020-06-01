@@ -18,11 +18,24 @@ contract Sensor {
     //setter derivanti dai messaggi in entrata
     function m2_setTemp(int256 _temp) public {
         temp = _temp;
+        //TODO disabilitare questo metodo
+    }
+
+    //funzioni derivanti dai messaggi in uscita verso i contratti
+    function m3_communicateTemp() private {
+        thermostat.m3_communicateTemp(temp);
+
+        gwe_parallel_close();
     }
 
     //gateways
-    function gwb_parallel() public { //in seguito ad azione thermostat: richiamato
+    function gwb_parallel() public {
+        //in seguito ad azione thermostat: richiamato
         //TODO attivazione e disattivazione funzioni
-        
+        //ABILITARE m2_setTemp
+    }
+
+    function gwe_parallel_close() public {
+        //TODO
     }
 }

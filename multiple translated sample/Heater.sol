@@ -21,21 +21,30 @@ contract Heater {
         //si potrebbe fare un unica funzione per i due heat
         //si potrebbe mettere staticamente il valore di heat true o false
         heat = _heat;
+
+        gwg_conditional_close();
     }
 
     function m7_heat(bool _heat) public {
         //si potrebbe fare un unica funzione per i due heat
         //si potrebbe mettere staticamente il valore di heat true o false
         heat = _heat;
+
+        gwg_conditional_close();
+    }
+
+    function m9_communicateHeaterStatus() public {
+        thermostat.m9_communicateHeaterStatus(status);
     }
 
     function m8_setStatus(int256 _status) public {
         status = _status;
+
+        m9_communicateHeaterStatus();
     }
 
     //gateways
-    function gwb_parallel() public { //in seguito ad azione thermostat: richiamato
-        //TODO attivazione e disattivazione funzioni
-        
+    function gwg_conditional_close() public {
+        //TODO abilitare setStatus
     }
 }
