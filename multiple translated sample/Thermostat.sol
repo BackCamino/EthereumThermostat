@@ -109,7 +109,7 @@ contract Thermostat {
 
     function gwb_parallel() public {
         //in seguito ad azione thermostat: attivato direttamente. Il thermostat chiama gli altri
-        heater.gwb_parallel(); //si può rimuovere perché l'heater non è interessato. Non è compreso tra l'apertura e la chiusura del gateway
+        //heater.gwb_parallel(); //si può rimuovere perché l'heater non è interessato. Non è compreso tra l'apertura e la chiusura del gateway
         sensor.gwb_parallel();
 
         //attivazione e disattivazione funzioni

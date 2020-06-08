@@ -37,7 +37,7 @@ public class Translator {
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		File bpnmFile = new File("C:/Users/Diego/Documents/model.bpnm");
+		File bpnmFile = new File("./model.bpmn");
 		try {
 			run(bpnmFile);
 		} catch (Exception e) {
@@ -65,7 +65,7 @@ public class Translator {
 	}
 	
 	private String init() {
-		String intro = "pragma solidity ^0.5.3; \n" + "	pragma experimental ABIEncoderV2;\n";
+		String intro = "pragma solidity ^0.6.9;\n" + "pragma experimental ABIEncoderV2;\n";
 		for(String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" 
 			 + getContractParams(participant) + getAddresses(participant) + getFunctions(participant) + "}";
@@ -99,7 +99,7 @@ public class Translator {
 			if(contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0) {
 				Message msg = mFlow.getMessage();
 				String[] result = msg.getName().split("\\(");
-				params += "    " + result[1].split("\\)")[0] + ";\n";
+				params += "    " + result[1].split("\\)")[0] + ";\n"; //TODO ci possono essere più parametri in un messaggio
 			}
 		}
 		return params;
