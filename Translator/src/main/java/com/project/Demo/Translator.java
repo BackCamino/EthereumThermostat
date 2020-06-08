@@ -38,7 +38,7 @@ public class Translator {
 
 	public static void main(String[] args) {
 		Translator translator = new Translator();
-		File bpnmFile = new File("./model.bpmn");
+		File bpnmFile = new File("./model.bpmn"); // ./model.bpmn ./test_diagram.bpmn
 		try {
 			translator.run(bpnmFile);
 		} catch (Exception e) {
@@ -69,8 +69,8 @@ public class Translator {
 		String intro = "pragma solidity ^0.6.9;\n" + "pragma experimental ABIEncoderV2;\n";
 		for (String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
-					+ getContractsVariables(participant) + getEvents(participant) + getSetterFunctions(participant)
-					+ "}";
+					+ getContractsVariables(participant) + getOutgoingMessagesFunctions(participant)
+					+ getEvents(participant) + getSetterFunctions(participant) + "}";
 		}
 		return intro;
 	}
@@ -166,7 +166,7 @@ public class Translator {
 			if (partId.compareTo(getParticipant(msgFlow.getTarget().getId()).getName()) == 0) {
 				Collection<Variable> variables = getVariables(msgFlow.getMessage());
 
-				functions += "    function (";
+				functions += "    function " + msgFlow.getMessage().getName().split("\\(")[0] + " (";
 				Iterator<Variable> iter = variables.iterator();
 				while (iter.hasNext()) {
 					Variable v = iter.next();
@@ -179,6 +179,35 @@ public class Translator {
 				for (Variable v : variables) {
 					functions += "        " + v.getName() + " = _" + v.getName() + ";\n";
 					functions += "        emit " + v.getName() + "Changed" + " (" + v.getName() + ");\n";
+				}
+
+				functions += "    }\n\n";
+			}
+		}
+		return functions;
+	}
+
+	/**
+	 * Retrieves functions that call methods on the others contracts based on the
+	 * outgoing messages
+	 * 
+	 * @param partId
+	 * @return
+	 */
+	private String getOutgoingMessagesFunctions(String partId) { // TODO not working
+		String functions = "\n";
+		for (MessageFlow msgFlow : messageFlows) {
+			// TODO check if target participant is not extern
+			if (partId.compareTo(getParticipant(msgFlow.getSource().getId()).getName()) == 0) {
+				Collection<Variable> variables = getVariables(msgFlow.getMessage());
+
+				String funName = msgFlow.getMessage().getName().split("\\(")[0];
+				functions += "    function " + funName + " () private {\n";
+
+				for (Variable v : variables) {
+					String participant = getParticipant(msgFlow.getTarget().getId()).getName();
+					String participantReference = participant.substring(0, 1).toLowerCase() + participant.substring(1);
+					functions += "        " + participantReference + "." + funName + "(" + v.getValue() + ");\n";
 				}
 
 				functions += "    }\n\n";
@@ -211,8 +240,12 @@ public class Translator {
 	private Collection<Variable> getVariables(Message msg) {
 		HashSet<Variable> res = new HashSet<>();
 		for (String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
-			String[] varParts = var.trim().split(" ");
-			res.add(new Variable(varParts[0], varParts[1]));
+			String value = null;
+			String[] varAndValue = var.trim().split("=");
+			if (varAndValue.length == 2)
+				value = varAndValue[1].trim();
+			String[] varParts = varAndValue[0].trim().split(" ");
+			res.add(new Variable(varParts[0], varParts[1], value));
 		}
 		return res;
 	}

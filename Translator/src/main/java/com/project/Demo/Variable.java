@@ -3,10 +3,16 @@ package com.project.Demo;
 public class Variable {
 	private String type;
 	private String name;
-	
+	private String value;
+
+	public Variable(String type, String name, String value) {
+		this.type = type;
+		this.name = name;
+		this.value = value;
+	}
+
 	public Variable(String type, String name) {
-		this.type=type;
-		this.name=name;
+		this(type, name, null);
 	}
 
 	public String getType() {
@@ -23,5 +29,13 @@ public class Variable {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
 	}
 }
