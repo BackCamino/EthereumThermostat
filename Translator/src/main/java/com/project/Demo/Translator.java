@@ -24,7 +24,7 @@ import org.camunda.bpm.model.xml.impl.instance.ModelElementInstanceImpl;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 
 public class Translator {
-	
+
 	private static BpmnModelInstance modelInstance;
 	public static Collection<FlowNode> allNodes;
 	public static ArrayList<String> participants;
@@ -35,7 +35,7 @@ public class Translator {
 	public static ArrayList<String> externParticipantsWithoutDuplicates;
 	public static Collection<ChoreographyTask> chorTasks;
 	public static String solidityFile;
-	
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		File bpnmFile = new File("./model.bpmn");
@@ -45,7 +45,7 @@ public class Translator {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public Translator() {
 		participants = new ArrayList<String>();
 		participantsWithoutDuplicates = new ArrayList<String>();
@@ -53,7 +53,7 @@ public class Translator {
 		externParticipantsWithoutDuplicates = new ArrayList<String>();
 		chorTasks = new HashSet<>();
 	}
-	
+
 	public static void run(File bpmnFile) throws Exception {
 		Translator translator = new Translator();
 		translator.readFile(bpmnFile);
@@ -62,60 +62,75 @@ public class Translator {
 		translator.getChoreographyTasks();
 		solidityFile = translator.init();
 		System.out.println(solidityFile);
-		//translator.writeFile();
+		// translator.writeFile();
 	}
-	
+
 	private String init() {
 		String intro = "pragma solidity ^0.6.9;\n" + "pragma experimental ABIEncoderV2;\n";
-		for(String participant : participantsWithoutDuplicates) {
-			intro += "\ncontract " + participant + " {" 
-			 + getContractParams(participant) + getAddresses(participant) + getFunctions(participant) + "}";
+		for (String participant : participantsWithoutDuplicates) {
+			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
+					+ getEvents(participant) + getFunctions(participant) + "}";
 		}
 		return intro;
 	}
-	
-	
+
 	public void readFile(File bpFile) throws IOException {
 		modelInstance = Bpmn.readModelFromFile(bpFile);
 		allNodes = modelInstance.getModelElementsByType(FlowNode.class);
 	}
-	
+
 	private void writeFile() throws IOException, Exception {
-		FileWriter wChor = new FileWriter(new File(/* Project patch + */ File.separator + "resources"
-				+ File.separator /* + File name + .sol */));
+		FileWriter wChor = new FileWriter(
+				new File(/* Project patch + */ File.separator + "resources" + File.separator /* + File name + .sol */));
 		BufferedWriter bChor = new BufferedWriter(wChor);
 		bChor.write(solidityFile);
 		bChor.flush();
 		bChor.close();
 	}
-	
+
 	private void getMessages() {
 		messages = modelInstance.getModelElementsByType(Message.class);
 		messageFlows = modelInstance.getModelElementsByType(MessageFlow.class);
 	}
-	
+
 	private String getContractParams(String contractName) {
 		String params = "\n";
-		for(MessageFlow mFlow : messageFlows) {
-			if(contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0) {
-				Message msg = mFlow.getMessage();
-				String[] result = msg.getName().split("\\(");
-				params += "    " + result[1].split("\\)")[0] + ";\n"; //TODO ci possono essere più parametri in un messaggio
+		for (MessageFlow mFlow : messageFlows) {
+			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0) {
+				Collection<Variable> variables = getVariables(mFlow.getMessage());
+
+				// define attributes
+				for (Variable v : variables) {
+					params += "    " + v.getType() + " " + v.getName() + ";\n";
+				}
 			}
 		}
 		return params;
 	}
-	
-	
+
+	private String getEvents(String contractName) {
+		String events = "\n";
+		for (MessageFlow mFlow : messageFlows) {
+			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0) {
+				Collection<Variable> variables = getVariables(mFlow.getMessage());
+
+				// define events for changing attributes
+				for (Variable v : variables) {
+					events += "    event " + v.getName() + "Change (" + v.getType() + " _" + v.getName() + ");\n";
+				}
+			}
+		}
+		return events;
+	}
+
 	private Participant getParticipant(String partId) {
 		return modelInstance.getModelElementById(partId);
 	}
-	
-	
+
 	private void getParticipants() {
 		Collection<Participant> parti = modelInstance.getModelElementsByType(Participant.class);
 		for (Participant p : parti) {
-			if(!isExtern(p)) {
+			if (!isExtern(p)) {
 				participants.add(p.getName());
 			} else {
 				externParticipants.add(p.getName());
@@ -124,82 +139,82 @@ public class Translator {
 		participantsWithoutDuplicates = new ArrayList<>(new HashSet<>(participants));
 		externParticipantsWithoutDuplicates = new ArrayList<>(new HashSet<>(externParticipants));
 	}
-	
+
 	private String getFunctions(String partId) {
 		String functions = "\n";
-		for(MessageFlow msgFlow : messageFlows) {
-			if(partId.compareTo(getParticipant(msgFlow.getTarget().getId()).getName()) == 0) {
-				Collection<Variable> variables=getVariables(msgFlow.getMessage());
-				
+		for (MessageFlow msgFlow : messageFlows) {
+			if (partId.compareTo(getParticipant(msgFlow.getTarget().getId()).getName()) == 0) {
+				Collection<Variable> variables = getVariables(msgFlow.getMessage());
+
 				functions += "    function (";
-				Iterator<Variable> iter=variables.iterator();
-				while(iter.hasNext()) {
-					Variable v=iter.next();
-					functions+=v.getType()+" _"+v.getName();
-					if(iter.hasNext()) functions+=", ";
+				Iterator<Variable> iter = variables.iterator();
+				while (iter.hasNext()) {
+					Variable v = iter.next();
+					functions += v.getType() + " _" + v.getName();
+					if (iter.hasNext())
+						functions += ", ";
 				}
-				functions+=") public {\n";
-				
-				for(Variable v:variables) {
-					functions+="        "+v.getName()+" = _"+v.getName()+";\n";
+				functions += ") public {\n";
+
+				for (Variable v : variables) {
+					functions += "        " + v.getName() + " = _" + v.getName() + ";\n";
+					functions += "        emit " + v.getName() + "Changed" + " (" + v.getName() + ");\n";
 				}
-				
+
 				functions += "    }\n\n";
 			}
 		}
 		return functions;
 	}
-	
-	private Collection<Variable> getVariables(Message msg){
+
+	private Collection<Variable> getVariables(Message msg) {
 		HashSet<Variable> res = new HashSet<>();
-		for(String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
+		for (String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
 			String[] varParts = var.trim().split(" ");
- 			res.add(new Variable(varParts[0],varParts[1]));
+			res.add(new Variable(varParts[0], varParts[1]));
 		}
 		return res;
 	}
-	
+
 	private String getAddresses(String partId) {
 		String result_addresses = "\n";
 		ArrayList<String> addresses = new ArrayList<String>();
 		ArrayList<String> addressesWithoutDuplicates = new ArrayList<String>();
-		
-		for(ChoreographyTask task : chorTasks) {
-			if(task.getParticipantRef().getName().compareTo(partId) == 0) {
-				if(isExtern(task.getInitialParticipant())) {
+
+		for (ChoreographyTask task : chorTasks) {
+			if (task.getParticipantRef().getName().compareTo(partId) == 0) {
+				if (isExtern(task.getInitialParticipant())) {
 					addresses.add(task.getInitialParticipant().getName());
 				}
 			}
 		}
 		addressesWithoutDuplicates = new ArrayList<>(new HashSet<>(addresses));
-		for(String addr : addressesWithoutDuplicates) {
+		for (String addr : addressesWithoutDuplicates) {
 			result_addresses += "    address " + addr + ";\n";
 		}
-		
+
 		result_addresses += "\n    constructor(";
-		
-		for(String addr : addressesWithoutDuplicates) {
+
+		for (String addr : addressesWithoutDuplicates) {
 			result_addresses += "address _" + addr + ", ";
 		}
-		
+
 		result_addresses += ") {\n";
-		
-		for(String addr : addressesWithoutDuplicates) {
+
+		for (String addr : addressesWithoutDuplicates) {
 			result_addresses += "        " + addr + " = _" + addr + ";\n";
 		}
-		
+
 		result_addresses += "    }\n";
-		
+
 		return result_addresses;
 	}
-	
-	
-	
+
 	private void getChoreographyTasks() {
 		for (SequenceFlow flow : modelInstance.getModelElementsByType(SequenceFlow.class)) {
 			// node to be processed, created by the target reference of the sequence flow
 			ModelElementInstance node = modelInstance.getModelElementById(flow.getAttributeValue("targetRef"));
-			
+
 			if (node instanceof ModelElementInstanceImpl && !(node instanceof EndEvent)
 					&& !(node instanceof ParallelGateway) && !(node instanceof ExclusiveGateway)
 					&& !(node instanceof EventBasedGateway)) {
@@ -207,18 +222,20 @@ public class Translator {
 			}
 		}
 	}
-	
+
 	private boolean isExtern(Participant participant) {
 		return participant.getName().contains("EXT_");
 	}
-	
+
 	public void flowNodeSearch() {
 		for (SequenceFlow flow : modelInstance.getModelElementsByType(SequenceFlow.class)) {
 			ModelElementInstance node = modelInstance.getModelElementById(flow.getAttributeValue("targetRef"));
 			ModelElementInstance start = modelInstance.getModelElementById(flow.getAttributeValue("sourceRef"));
-			/*if(start instanceof ReceiveTask) {
-				
-			}*/
+			/*
+			 * if(start instanceof ReceiveTask) {
+			 * 
+			 * }
+			 */
 		}
 	}
 }
