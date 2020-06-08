@@ -25,22 +25,22 @@ import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 
 public class Translator {
 
-	private static BpmnModelInstance modelInstance;
-	public static Collection<FlowNode> allNodes;
-	public static ArrayList<String> participants;
-	public static ArrayList<String> participantsWithoutDuplicates;
-	public static Collection<Message> messages;
-	public static Collection<MessageFlow> messageFlows;
-	public static ArrayList<String> externParticipants;
-	public static ArrayList<String> externParticipantsWithoutDuplicates;
-	public static Collection<ChoreographyTask> chorTasks;
-	public static String solidityFile;
+	private BpmnModelInstance modelInstance;
+	private Collection<FlowNode> allNodes;
+	private ArrayList<String> participants;
+	private ArrayList<String> participantsWithoutDuplicates;
+	private Collection<Message> messages;
+	private Collection<MessageFlow> messageFlows;
+	private ArrayList<String> externParticipants;
+	private ArrayList<String> externParticipantsWithoutDuplicates;
+	private Collection<ChoreographyTask> chorTasks;
+	private String solidityFile;
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		Translator translator = new Translator();
 		File bpnmFile = new File("./model.bpmn");
 		try {
-			run(bpnmFile);
+			translator.run(bpnmFile);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -54,7 +54,7 @@ public class Translator {
 		chorTasks = new HashSet<>();
 	}
 
-	public static void run(File bpmnFile) throws Exception {
+	public void run(File bpmnFile) throws Exception {
 		Translator translator = new Translator();
 		translator.readFile(bpmnFile);
 		translator.getParticipants();
