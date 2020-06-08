@@ -67,9 +67,10 @@ public class Translator {
 
 	private String init() {
 		String intro = "pragma solidity ^0.6.9;\n" + "pragma experimental ABIEncoderV2;\n";
+		intro += "\nenum State {DISABLED, ENABLED}\n";
 		for (String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
-					+ getContractsVariables(participant) + getOutgoingMessagesFunctions(participant)
+					+ getContractsVariables(participant)// + getOutgoingMessagesFunctions(participant)
 					+ getEvents(participant) + getSetterFunctions(participant) + "}";
 		}
 		return intro;
@@ -233,6 +234,32 @@ public class Translator {
 						+ participant.substring(0, 1).toLowerCase() + participant.substring(1) + ";\n";
 			}
 		}
+		
+		for (String participant : participantsWithoutDuplicates) {
+			if (partId.compareTo(participant) != 0) {
+				contracts += "\n    function set" + participant.substring(0, 1).toUpperCase() + participant.substring(1) + "(address _address) {\n"
+						+ "        " + participant.substring(0, 1).toLowerCase() + participant.substring(1) + " = " 
+						+ participant.substring(0, 1).toUpperCase() + participant.substring(1) + "(_address);\n" 
+						+ "        start();\n" + "    }\n";
+			}
+		}
+		
+		contracts += "\n    function start() private {\n        if(";
+		
+		for (int i = 0; i < participantsWithoutDuplicates.size(); i++) {
+			if (partId.compareTo(participantsWithoutDuplicates.get(i)) != 0) {
+				String participant = participantsWithoutDuplicates.get(i);
+				if(i != 0) {
+					contracts += " && address(" + participant.substring(0, 1).toLowerCase() + participant.substring(1) + ")" 
+				            + " != address(0)";
+					
+				} else {
+					contracts += "address(" + participant.substring(0, 1).toLowerCase() + participant.substring(1) + ")" 
+				            + " != address(0)";
+				}
+			}
+		}
+		contracts += ") {\n        }\n    }\n";
 
 		return contracts;
 	}
@@ -269,8 +296,12 @@ public class Translator {
 
 		result_addresses += "\n    constructor(";
 
-		for (String addr : addressesWithoutDuplicates) {
-			result_addresses += "address _" + addr + ", ";
+		for (int i = 0; i < addressesWithoutDuplicates.size(); i ++) {
+			if(i != 0) {
+				result_addresses += ", address _" + addressesWithoutDuplicates.get(i);
+			} else {
+				result_addresses += "address _" + addressesWithoutDuplicates.get(i);
+			}
 		}
 
 		result_addresses += ") {\n";
