@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -128,11 +129,34 @@ public class Translator {
 		String functions = "\n";
 		for(MessageFlow msgFlow : messageFlows) {
 			if(partId.compareTo(getParticipant(msgFlow.getTarget().getId()).getName()) == 0) {
-				functions += "    function " + msgFlow.getMessage().getName() +" public {\n";
+				Collection<Variable> variables=getVariables(msgFlow.getMessage());
+				
+				functions += "    function (";
+				Iterator<Variable> iter=variables.iterator();
+				while(iter.hasNext()) {
+					Variable v=iter.next();
+					functions+=v.getType()+" _"+v.getName();
+					if(iter.hasNext()) functions+=", ";
+				}
+				functions+=") public {\n";
+				
+				for(Variable v:variables) {
+					functions+="        "+v.getName()+" = _"+v.getName()+";\n";
+				}
+				
 				functions += "    }\n\n";
 			}
 		}
 		return functions;
+	}
+	
+	private Collection<Variable> getVariables(Message msg){
+		HashSet<Variable> res = new HashSet<>();
+		for(String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
+			String[] varParts = var.trim().split(" ");
+ 			res.add(new Variable(varParts[0],varParts[1]));
+		}
+		return res;
 	}
 	
 	private String getAddresses(String partId) {
