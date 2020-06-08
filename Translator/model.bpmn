@@ -5,7 +5,6 @@
   <bpmn2:message id="Message_04mtmp8" name="communicateStatus(string currentState)" />
   <bpmn2:message id="Message_17r8u48" name="setHeating(bool startHeating)" />
   <bpmn2:message id="Message_0x8b6aw" name="temp(uint actualTemp)" />
-  <bpmn2:message id="Message_016o0mu" />
   <bpmn2:message id="Message_0guv0gv" name="initialize(uint initialThresholdTemp)" />
   <bpmn2:choreography id="Choreography">
     <bpmn2:participant id="Participant_1x6c2sa" name="Sensor" />
@@ -20,7 +19,6 @@
     <bpmn2:messageFlow id="MessageFlow_1smuhss" sourceRef="Participant_1pv53gd" targetRef="Participant_0s8xnze" messageRef="Message_04mtmp8" />
     <bpmn2:messageFlow id="MessageFlow_1d5vhm0" sourceRef="Participant_0s8xnze" targetRef="Participant_1pv53gd" messageRef="Message_17r8u48" />
     <bpmn2:messageFlow id="MessageFlow_0m6to9a" sourceRef="Participant_0lxmze2" targetRef="Participant_0s8xnze" messageRef="Message_0x8b6aw" />
-    <bpmn2:messageFlow id="MessageFlow_04y5bmy" sourceRef="Participant_0s8xnze" targetRef="Participant_0qn9x2i" messageRef="Message_016o0mu" />
     <bpmn2:messageFlow id="MessageFlow_09dr7g0" sourceRef="Participant_0qn9x2i" targetRef="Participant_0s8xnze" messageRef="Message_0guv0gv" />
     <bpmn2:startEvent id="StartEvent_1gj1c1y">
       <bpmn2:outgoing>SequenceFlow_0vy81pl</bpmn2:outgoing>
@@ -30,7 +28,6 @@
       <bpmn2:outgoing>SequenceFlow_1wkldwa</bpmn2:outgoing>
       <bpmn2:participantRef>Participant_0qn9x2i</bpmn2:participantRef>
       <bpmn2:participantRef>Participant_0s8xnze</bpmn2:participantRef>
-      <bpmn2:messageFlowRef>MessageFlow_04y5bmy</bpmn2:messageFlowRef>
       <bpmn2:messageFlowRef>MessageFlow_09dr7g0</bpmn2:messageFlowRef>
     </bpmn2:choreographyTask>
     <bpmn2:sequenceFlow id="SequenceFlow_0vy81pl" sourceRef="StartEvent_1gj1c1y" targetRef="ChoreographyTask_0vj94g3" />

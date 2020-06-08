@@ -266,6 +266,7 @@ public class Translator {
 
 	private Collection<Variable> getVariables(Message msg) {
 		HashSet<Variable> res = new HashSet<>();
+		
 		for (String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
 			String value = null;
 			String[] varAndValue = var.trim().split("=");
