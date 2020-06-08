@@ -69,7 +69,8 @@ public class Translator {
 		String intro = "pragma solidity ^0.6.9;\n" + "pragma experimental ABIEncoderV2;\n";
 		for (String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
-					+ getEvents(participant) + getFunctions(participant) + "}";
+					+ getContractsVariables(participant) + getEvents(participant) + getSetterFunctions(participant)
+					+ "}";
 		}
 		return intro;
 	}
@@ -93,6 +94,12 @@ public class Translator {
 		messageFlows = modelInstance.getModelElementsByType(MessageFlow.class);
 	}
 
+	/**
+	 * Retrieves the parameters of the incoming messages variables
+	 * 
+	 * @param contractName
+	 * @return
+	 */
 	private String getContractParams(String contractName) {
 		String params = "\n";
 		for (MessageFlow mFlow : messageFlows) {
@@ -108,6 +115,12 @@ public class Translator {
 		return params;
 	}
 
+	/**
+	 * Retrieves the events based on the variables set by incoming messages
+	 * 
+	 * @param contractName
+	 * @return
+	 */
 	private String getEvents(String contractName) {
 		String events = "\n";
 		for (MessageFlow mFlow : messageFlows) {
@@ -140,7 +153,14 @@ public class Translator {
 		externParticipantsWithoutDuplicates = new ArrayList<>(new HashSet<>(externParticipants));
 	}
 
-	private String getFunctions(String partId) {
+	/**
+	 * Retrieves setter functions based on the parameters in the incoming messages
+	 * 
+	 * @param partId
+	 * @return
+	 */
+	private String getSetterFunctions(String partId) {
+		// TODO add access control
 		String functions = "\n";
 		for (MessageFlow msgFlow : messageFlows) {
 			if (partId.compareTo(getParticipant(msgFlow.getTarget().getId()).getName()) == 0) {
@@ -165,6 +185,27 @@ public class Translator {
 			}
 		}
 		return functions;
+	}
+
+	/**
+	 * Retrieves the attributes associated with the other contracts
+	 * 
+	 * @param partId
+	 * @return
+	 */
+	private String getContractsVariables(String partId) {
+		// TODO check if there are no messages between the considered contract and the
+		// others
+		String contracts = "\n";
+
+		for (String participant : participantsWithoutDuplicates) {
+			if (partId.compareTo(participant) != 0) {
+				contracts += "    " + participant.substring(0, 1).toUpperCase() + participant.substring(1) + " "
+						+ participant.substring(0, 1).toLowerCase() + participant.substring(1) + ";\n";
+			}
+		}
+
+		return contracts;
 	}
 
 	private Collection<Variable> getVariables(Message msg) {
