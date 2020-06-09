@@ -38,7 +38,7 @@ public class Translator {
 
 	public static void main(String[] args) {
 		Translator translator = new Translator();
-		File bpnmFile = new File("./model.bpmn"); // ./model.bpmn ./test_diagram.bpmn
+		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn
 		try {
 			translator.run(bpnmFile);
 		} catch (Exception e) {
@@ -67,6 +67,7 @@ public class Translator {
 
 	private String init() {
 		String intro = "pragma solidity ^0.6.9;\n";
+		intro += "\nenum State {DISABLED, ENABLED}\n";
 		for (String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
 					+ getContractsVariables(participant) + getOutgoingMessagesFunctions(participant)
