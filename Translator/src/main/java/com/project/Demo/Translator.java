@@ -70,7 +70,7 @@ public class Translator {
 		for (String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
 					+ getContractsVariables(participant) + getOutgoingMessagesFunctions(participant)
-					+ getEvents(participant) + getSetterFunctions(participant) + "}";
+					+ getEvents(participant) + getSetterFunctions(participant) + "}\n";
 		}
 		return intro;
 	}
@@ -226,20 +226,49 @@ public class Translator {
 		// TODO check if there are no messages between the considered contract and the
 		// others
 		String contracts = "\n";
+		Collection<Variable> contractsVariables = new HashSet<>();
 
+		// variable declarations
 		for (String participant : participantsWithoutDuplicates) {
 			if (partId.compareTo(participant) != 0) {
-				contracts += "    " + participant.substring(0, 1).toUpperCase() + participant.substring(1) + " "
-						+ participant.substring(0, 1).toLowerCase() + participant.substring(1) + ";\n";
+				Variable variable = new Variable(participant.substring(0, 1).toUpperCase() + participant.substring(1),
+						participant.substring(0, 1).toLowerCase() + participant.substring(1));
+				contractsVariables.add(variable);
+				contracts += "    " + variable.getType() + " " + variable.getName() + ";\n";
 			}
 		}
+		contracts += "\n";
+
+		// variable assignment, setters
+		for (Variable v : contractsVariables) {
+			contracts += "    function set" + v.getType() + " (address _" + v.getName() + "Address) {\n";
+			contracts += "        " + v.getName() + " = " + v.getType() + " (_" + v.getName() + "Address);\n";
+			contracts += "    }\n\n";
+		}
+
+		// function that checks if all the addresses are provided
+		contracts += "    function isReady() public returns(bool) {\n";
+		if (contractsVariables.isEmpty())
+			contracts += "        return true;\n";
+		else {
+			contracts+="    if (";
+			
+			Iterator<Variable> iterator = contractsVariables.iterator();
+			while(iterator.hasNext()) {
+				Variable v=iterator.next();
+				contracts+="address("+v.getName()+") != address(0)";
+				if(iterator.hasNext()) contracts+=" && ";
+			}
+			contracts+=")\n        return true;\n    else\n        return false;\n";
+		}
+		contracts+="    }\n\n";
 
 		return contracts;
 	}
 
 	private Collection<Variable> getVariables(Message msg) {
 		HashSet<Variable> res = new HashSet<>();
-		
+
 		for (String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
 			String value = null;
 			String[] varAndValue = var.trim().split("=");
