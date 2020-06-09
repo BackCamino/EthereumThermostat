@@ -66,7 +66,7 @@ public class Translator {
 	}
 
 	private String init() {
-		String intro = "pragma solidity ^0.6.9;\n" + "pragma experimental ABIEncoderV2;\n";
+		String intro = "pragma solidity ^0.6.9;\n";
 		for (String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
 					+ getContractsVariables(participant) + getOutgoingMessagesFunctions(participant)
@@ -194,7 +194,7 @@ public class Translator {
 	 * @param partId
 	 * @return
 	 */
-	private String getOutgoingMessagesFunctions(String partId) { // TODO not working
+	private String getOutgoingMessagesFunctions(String partId) {
 		String functions = "\n";
 		for (MessageFlow msgFlow : messageFlows) {
 			// TODO check if target participant is not extern
@@ -247,21 +247,23 @@ public class Translator {
 		}
 
 		// function that checks if all the addresses are provided
+		// TODO add check only owner
 		contracts += "    function isReady() public returns(bool) {\n";
 		if (contractsVariables.isEmpty())
 			contracts += "        return true;\n";
 		else {
-			contracts+="    if (";
-			
+			contracts += "        if (";
+
 			Iterator<Variable> iterator = contractsVariables.iterator();
-			while(iterator.hasNext()) {
-				Variable v=iterator.next();
-				contracts+="address("+v.getName()+") != address(0)";
-				if(iterator.hasNext()) contracts+=" && ";
+			while (iterator.hasNext()) {
+				Variable v = iterator.next();
+				contracts += "address(" + v.getName() + ") != address(0)";
+				if (iterator.hasNext())
+					contracts += " && ";
 			}
-			contracts+=")\n        return true;\n    else\n        return false;\n";
+			contracts += ")\n            return true;\n        else\n            return false;\n";
 		}
-		contracts+="    }\n\n";
+		contracts += "    }\n\n";
 
 		return contracts;
 	}
@@ -298,9 +300,11 @@ public class Translator {
 		}
 
 		result_addresses += "\n    constructor(";
-
-		for (String addr : addressesWithoutDuplicates) {
-			result_addresses += "address _" + addr + ", ";
+		
+		Iterator<String> iterator=addressesWithoutDuplicates.iterator();
+		while(iterator.hasNext()) {
+			result_addresses += "address _" + iterator.next();
+			if(iterator.hasNext()) result_addresses += ", ";
 		}
 
 		result_addresses += ") {\n";
