@@ -2,12 +2,12 @@
 <bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xs="http://www.w3.org/2001/XMLSchema" id="_tTv5YOycEeiHGOQ2NkJZNQ" targetNamespace="http://www.signavio.com">
   <bpmn2:message id="Message_15a838m" name="comunicateHeaterStatus(int actualStatus = status)" />
   <bpmn2:message id="Message_03glvhc" name="setStatus(int status)" />
-  <bpmn2:message id="Message_1yycinj" name="heat(bool heat=false)" />
-  <bpmn2:message id="Message_0e4vprj" name="heat(bool heat=true)" />
+  <bpmn2:message id="Message_1yycinj" name="heat(bool heat = false)" />
+  <bpmn2:message id="Message_0e4vprj" name="heat(bool heat = true)" />
   <bpmn2:message id="Message_0m1noiz" name="setTemp(int temp)" />
   <bpmn2:message id="Message_0x7sv2e" name="shutDown(bool shutDown)" />
   <bpmn2:message id="Message_1ksm8jv" name="setThreshold(int threshold)" />
-  <bpmn2:message id="Message_0x8b6aw" name="communicateTemp(uint actualTemp= temp)" />
+  <bpmn2:message id="Message_0x8b6aw" name="communicateTemp(uint actualTemp = temp)" />
   <bpmn2:message id="Message_0guv0gv" name="initialize(int threshold)" />
   <bpmn2:choreography id="Choreography">
     <bpmn2:participant id="Participant_1x6c2sa" name="Heater" />
@@ -18,8 +18,6 @@
     <bpmn2:participant id="Participant_0qn9x2i" name="EXT_User" />
     <bpmn2:participant id="Participant_0s8xnze" name="Thermostat" />
     <bpmn2:participant id="Participant_0a6f9i3" name="EXT_SensorGW" />
-    <bpmn2:participant id="Participant_05lgt2c" name="New Participant" />
-    <bpmn2:participant id="Participant_0yhjxxs" name="New Participant" />
     <bpmn2:participant id="Participant_0xdrbrz" name="EXT_HeaterGW" />
     <bpmn2:messageFlow id="MessageFlow_0cjl42k" sourceRef="Participant_1x6c2sa" targetRef="Participant_0yoytyi" messageRef="Message_15a838m" />
     <bpmn2:messageFlow id="MessageFlow_1ytqu8t" sourceRef="Participant_0xdrbrz" targetRef="Participant_1x6c2sa" messageRef="Message_03glvhc" />

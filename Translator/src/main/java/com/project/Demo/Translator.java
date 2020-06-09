@@ -38,7 +38,7 @@ public class Translator {
 
 	public static void main(String[] args) {
 		Translator translator = new Translator();
-		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn ./diagram.bpmn
+		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn
 		try {
 			translator.run(bpnmFile);
 		} catch (Exception e) {
@@ -66,12 +66,12 @@ public class Translator {
 	}
 
 	private String init() {
-		String intro = "pragma solidity ^0.6.9;\n" + "pragma experimental ABIEncoderV2;\n";
+		String intro = "pragma solidity ^0.6.9;\n";
 		intro += "\nenum State {DISABLED, ENABLED}\n";
 		for (String participant : participantsWithoutDuplicates) {
 			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
-					+ getContractsVariables(participant)// + getOutgoingMessagesFunctions(participant)
-					+ getEvents(participant) + getSetterFunctions(participant) + "}";
+					+ getContractsVariables(participant) + getOutgoingMessagesFunctions(participant)
+					+ getEvents(participant) + getSetterFunctions(participant) + "}\n";
 		}
 		return intro;
 	}
@@ -195,7 +195,7 @@ public class Translator {
 	 * @param partId
 	 * @return
 	 */
-	private String getOutgoingMessagesFunctions(String partId) { // TODO not working
+	private String getOutgoingMessagesFunctions(String partId) {
 		String functions = "\n";
 		for (MessageFlow msgFlow : messageFlows) {
 			// TODO check if target participant is not extern
@@ -227,46 +227,51 @@ public class Translator {
 		// TODO check if there are no messages between the considered contract and the
 		// others
 		String contracts = "\n";
+		Collection<Variable> contractsVariables = new HashSet<>();
 
+		// variable declarations
 		for (String participant : participantsWithoutDuplicates) {
 			if (partId.compareTo(participant) != 0) {
-				contracts += "    " + participant.substring(0, 1).toUpperCase() + participant.substring(1) + " "
-						+ participant.substring(0, 1).toLowerCase() + participant.substring(1) + ";\n";
+				Variable variable = new Variable(participant.substring(0, 1).toUpperCase() + participant.substring(1),
+						participant.substring(0, 1).toLowerCase() + participant.substring(1));
+				contractsVariables.add(variable);
+				contracts += "    " + variable.getType() + " " + variable.getName() + ";\n";
 			}
 		}
-		
-		for (String participant : participantsWithoutDuplicates) {
-			if (partId.compareTo(participant) != 0) {
-				contracts += "\n    function set" + participant.substring(0, 1).toUpperCase() + participant.substring(1) + "(address _address) {\n"
-						+ "        " + participant.substring(0, 1).toLowerCase() + participant.substring(1) + " = " 
-						+ participant.substring(0, 1).toUpperCase() + participant.substring(1) + "(_address);\n" 
-						+ "        start();\n" + "    }\n";
-			}
+		contracts += "\n";
+
+		// variable assignment, setters
+		for (Variable v : contractsVariables) {
+			contracts += "    function set" + v.getType() + " (address _" + v.getName() + "Address) {\n";
+			contracts += "        " + v.getName() + " = " + v.getType() + " (_" + v.getName() + "Address);\n";
+			contracts += "    }\n\n";
 		}
-		
-		contracts += "\n    function start() private {\n        if(";
-		
-		for (int i = 0; i < participantsWithoutDuplicates.size(); i++) {
-			if (partId.compareTo(participantsWithoutDuplicates.get(i)) != 0) {
-				String participant = participantsWithoutDuplicates.get(i);
-				if(i != 0) {
-					contracts += " && address(" + participant.substring(0, 1).toLowerCase() + participant.substring(1) + ")" 
-				            + " != address(0)";
-					
-				} else {
-					contracts += "address(" + participant.substring(0, 1).toLowerCase() + participant.substring(1) + ")" 
-				            + " != address(0)";
-				}
+
+		// function that checks if all the addresses are provided
+		// TODO add check only owner
+		contracts += "    function isReady() public returns(bool) {\n";
+		if (contractsVariables.isEmpty())
+			contracts += "        return true;\n";
+		else {
+			contracts += "        if (";
+
+			Iterator<Variable> iterator = contractsVariables.iterator();
+			while (iterator.hasNext()) {
+				Variable v = iterator.next();
+				contracts += "address(" + v.getName() + ") != address(0)";
+				if (iterator.hasNext())
+					contracts += " && ";
 			}
+			contracts += ")\n            return true;\n        else\n            return false;\n";
 		}
-		contracts += ") {\n        }\n    }\n";
+		contracts += "    }\n\n";
 
 		return contracts;
 	}
 
 	private Collection<Variable> getVariables(Message msg) {
 		HashSet<Variable> res = new HashSet<>();
-		
+
 		for (String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
 			String value = null;
 			String[] varAndValue = var.trim().split("=");
@@ -296,13 +301,11 @@ public class Translator {
 		}
 
 		result_addresses += "\n    constructor(";
-
-		for (int i = 0; i < addressesWithoutDuplicates.size(); i ++) {
-			if(i != 0) {
-				result_addresses += ", address _" + addressesWithoutDuplicates.get(i);
-			} else {
-				result_addresses += "address _" + addressesWithoutDuplicates.get(i);
-			}
+		
+		Iterator<String> iterator=addressesWithoutDuplicates.iterator();
+		while(iterator.hasNext()) {
+			result_addresses += "address _" + iterator.next();
+			if(iterator.hasNext()) result_addresses += ", ";
 		}
 
 		result_addresses += ") {\n";
