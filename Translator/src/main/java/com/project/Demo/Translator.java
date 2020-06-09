@@ -38,7 +38,7 @@ public class Translator {
 
 	public static void main(String[] args) {
 		Translator translator = new Translator();
-		File bpnmFile = new File("./model.bpmn"); // ./model.bpmn ./test_diagram.bpmn
+		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn ./diagram.bpmn
 		try {
 			translator.run(bpnmFile);
 		} catch (Exception e) {
