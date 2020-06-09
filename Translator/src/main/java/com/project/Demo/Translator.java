@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -103,15 +104,14 @@ public class Translator {
 	 */
 	private String getContractParams(String contractName) {
 		String params = "\n";
+		Set<Variable> variables = new HashSet<>();
 		for (MessageFlow mFlow : messageFlows) {
-			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0) {
-				Collection<Variable> variables = getVariables(mFlow.getMessage());
-
-				// define attributes
-				for (Variable v : variables) {
-					params += "    " + v.getType() + " " + v.getName() + ";\n";
-				}
-			}
+			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0)
+				variables.addAll(getVariables(mFlow.getMessage()));
+		}
+		// define attributes
+		for (Variable v : variables) {
+			params += "    " + v.getType() + " " + v.getName() + ";\n";
 		}
 		return params;
 	}
@@ -269,6 +269,12 @@ public class Translator {
 		return contracts;
 	}
 
+	/**
+	 * Retrieves variables from a message string
+	 * 
+	 * @param msg
+	 * @return
+	 */
 	private Collection<Variable> getVariables(Message msg) {
 		HashSet<Variable> res = new HashSet<>();
 
@@ -301,11 +307,12 @@ public class Translator {
 		}
 
 		result_addresses += "\n    constructor(";
-		
-		Iterator<String> iterator=addressesWithoutDuplicates.iterator();
-		while(iterator.hasNext()) {
+
+		Iterator<String> iterator = addressesWithoutDuplicates.iterator();
+		while (iterator.hasNext()) {
 			result_addresses += "address _" + iterator.next();
-			if(iterator.hasNext()) result_addresses += ", ";
+			if (iterator.hasNext())
+				result_addresses += ", ";
 		}
 
 		result_addresses += ") {\n";
