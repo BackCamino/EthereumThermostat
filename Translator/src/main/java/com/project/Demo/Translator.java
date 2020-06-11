@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -15,6 +16,7 @@ import org.camunda.bpm.model.bpmn.instance.EndEvent;
 import org.camunda.bpm.model.bpmn.instance.EventBasedGateway;
 import org.camunda.bpm.model.bpmn.instance.ExclusiveGateway;
 import org.camunda.bpm.model.bpmn.instance.FlowNode;
+import org.camunda.bpm.model.bpmn.instance.Gateway;
 import org.camunda.bpm.model.bpmn.instance.Message;
 import org.camunda.bpm.model.bpmn.instance.MessageFlow;
 import org.camunda.bpm.model.bpmn.instance.ParallelGateway;
@@ -22,6 +24,7 @@ import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.xml.impl.instance.ModelElementInstanceImpl;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
+import org.joda.time.format.ISOPeriodFormat;
 
 public class Translator {
 
@@ -34,6 +37,7 @@ public class Translator {
 	private ArrayList<String> externParticipants;
 	private ArrayList<String> externParticipantsWithoutDuplicates;
 	private Collection<ChoreographyTask> chorTasks;
+	private Collection<Gateway> gateways;
 	private String solidityFile;
 
 	public static void main(String[] args) {
@@ -57,9 +61,6 @@ public class Translator {
 	public void run(File bpmnFile) throws Exception {
 		Translator translator = new Translator();
 		translator.readFile(bpmnFile);
-		translator.getParticipants();
-		translator.getMessages();
-		translator.getChoreographyTasks();
 		solidityFile = translator.init();
 		System.out.println(solidityFile);
 		// translator.writeFile();
@@ -69,9 +70,16 @@ public class Translator {
 		String intro = "pragma solidity ^0.6.9;\n";
 		intro += "\nenum State {DISABLED, ENABLED}\n";
 		for (String participant : participantsWithoutDuplicates) {
-			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
-					+ getContractsVariables(participant) + getOutgoingMessagesFunctions(participant)
-					+ getEvents(participant) + getSetterFunctions(participant) + "}\n";
+			intro += "\ncontract " + participant + " {" 
+					+ getContractParams(participant) 
+					+ getAddresses(participant)
+					+ getContractsVariables(participant) +
+					// getOutgoingMessagesFunctions(participant)+
+					getEvents(participant) +
+					// getSetterFunctions(participant) +
+					getTaskFunctions(participant) + 
+					getGatewayFunctions(participant) +
+					"}\n";
 		}
 		return intro;
 	}
@@ -79,6 +87,10 @@ public class Translator {
 	public void readFile(File bpFile) throws IOException {
 		modelInstance = Bpmn.readModelFromFile(bpFile);
 		allNodes = modelInstance.getModelElementsByType(FlowNode.class);
+		getParticipants();
+		getMessages();
+		getChoreographyTasks();
+		getGateways();
 	}
 
 	private void writeFile() throws IOException, Exception {
@@ -95,6 +107,10 @@ public class Translator {
 		messageFlows = modelInstance.getModelElementsByType(MessageFlow.class);
 	}
 
+	private void getGateways() {
+		gateways = modelInstance.getModelElementsByType(Gateway.class);
+	}
+
 	/**
 	 * Retrieves the parameters of the incoming messages variables
 	 * 
@@ -103,15 +119,14 @@ public class Translator {
 	 */
 	private String getContractParams(String contractName) {
 		String params = "\n";
+		Set<Variable> variables = new HashSet<>();
 		for (MessageFlow mFlow : messageFlows) {
-			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0) {
-				Collection<Variable> variables = getVariables(mFlow.getMessage());
-
-				// define attributes
-				for (Variable v : variables) {
-					params += "    " + v.getType() + " " + v.getName() + ";\n";
-				}
-			}
+			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0)
+				variables.addAll(getVariables(mFlow.getMessage()));
+		}
+		// define attributes
+		for (Variable v : variables) {
+			params += "    " + v.getType() + " " + v.getName() + ";\n";
 		}
 		return params;
 	}
@@ -130,7 +145,7 @@ public class Translator {
 
 				// define events for changing attributes
 				for (Variable v : variables) {
-					events += "    event " + v.getName() + "Change (" + v.getType() + " _" + v.getName() + ");\n";
+					events += "    event " + v.getName() + "Changed (" + v.getType() + " _" + v.getName() + ");\n";
 				}
 			}
 		}
@@ -269,6 +284,12 @@ public class Translator {
 		return contracts;
 	}
 
+	/**
+	 * Retrieves variables from a message string
+	 * 
+	 * @param msg
+	 * @return
+	 */
 	private Collection<Variable> getVariables(Message msg) {
 		HashSet<Variable> res = new HashSet<>();
 
@@ -301,11 +322,12 @@ public class Translator {
 		}
 
 		result_addresses += "\n    constructor(";
-		
-		Iterator<String> iterator=addressesWithoutDuplicates.iterator();
-		while(iterator.hasNext()) {
+
+		Iterator<String> iterator = addressesWithoutDuplicates.iterator();
+		while (iterator.hasNext()) {
 			result_addresses += "address _" + iterator.next();
-			if(iterator.hasNext()) result_addresses += ", ";
+			if (iterator.hasNext())
+				result_addresses += ", ";
 		}
 
 		result_addresses += ") {\n";
@@ -346,5 +368,169 @@ public class Translator {
 			 * }
 			 */
 		}
+	}
+
+	private String getTaskFunctions(String partId) {
+		String functions = "\n";
+		for (ChoreographyTask task : chorTasks) {
+			if (task.getInitialParticipant().getName().compareTo(partId) == 0
+					|| task.getParticipantRef().getName().compareTo(partId) == 0) {
+				if (task.getInitialParticipant().getName().compareTo(partId) == 0) {
+					// create function that sets variables and calls other contract method
+					Collection<Variable> variables = getVariables(task.getRequest().getMessage());
+
+					String funName = task.getRequest().getMessage().getName().split("\\(")[0];
+					functions += "    function " + funName + " () public {\n";
+
+					String participant = getParticipant(task.getRequest().getTarget().getId()).getName();
+					String participantReference = participant.substring(0, 1).toLowerCase() + participant.substring(1);
+					functions += "        " + participantReference + "." + funName + "(";
+					for (Variable v : variables)
+						functions += v.getValue() + ", ";
+					functions = functions.substring(0, functions.length() - 2); // remove ", "
+					functions += ");\n";
+				} else { // is receiving
+					Collection<Variable> variables = getVariables(task.getRequest().getMessage());
+
+					functions += "    function " + task.getRequest().getMessage().getName().split("\\(")[0] + " (";
+					Iterator<Variable> iter = variables.iterator();
+					while (iter.hasNext()) {
+						Variable v = iter.next();
+						functions += v.getType() + " _" + v.getName();
+						if (iter.hasNext())
+							functions += ", ";
+					}
+					functions += ") public {\n";
+
+					for (Variable v : variables) {
+						functions += "        " + v.getName() + " = _" + v.getName() + ";\n";
+						functions += "        emit " + v.getName() + "Changed" + " (" + v.getName() + ");\n";
+					}
+
+					if (isExtern(task.getInitialParticipant())) { // setter message from extern
+
+						// TODO
+					} else { // message from other function
+						functions += "    }\n\n";
+						continue;
+						// TODO
+					}
+				}
+
+				// call the next sequence node
+				ModelElementInstance modelElement = modelInstance.getModelElementById(
+						task.getOutgoing().stream().findAny().orElseThrow().getAttributeValue("targetRef"));
+				// assumes that there's one single outgoing
+				boolean done = false;
+				do {
+					if (isGateway(modelElement)) {
+						if (isGatewayOpen((Gateway) modelElement)) {
+							Gateway gw = (Gateway) modelElement;
+							// notify all the other components and this one
+							functions += "        opening_" + gw.getId() + "();\n";
+							for (String p : participantsWithoutDuplicates) {
+								if (partId.compareTo(p) != 0)
+									functions += "        " + p.substring(0, 1).toLowerCase() + p.substring(1)
+											+ ".opening_" + gw.getId() + "();\n";
+							}
+
+							done = true;
+						} else {
+							// skip and update outgoing. Assumes that closing gateways have a single
+							// outgoing
+							modelElement = modelInstance.getModelElementById(((Gateway) modelElement).getOutgoing()
+									.stream().findAny().orElseThrow().getAttributeValue("targetRef"));
+						}
+					} else if (isChoreographyTask(modelElement)) {
+						ChoreographyTask ct = new ChoreographyTask((ModelElementInstanceImpl) modelElement,
+								modelInstance);
+						String f = ct.getRequest().getMessage().getName().split("\\(")[0];
+						if (isExtern(ct.getInitialParticipant())) {
+							// enable receiving message from extern
+							String p = ct.getParticipantRef().getName();
+							functions += "        " + p.substring(0, 1).toLowerCase() + p.substring(1) + ".enable_" + f
+									+ "();\n";
+						} else {
+							// call the function associated with the task
+							String p = ct.getInitialParticipant().getName();
+							if (!p.equals(partId))
+								functions += "        " + p.substring(0, 1).toLowerCase() + p.substring(1) + ".";
+							functions += "        " + f + "();\n";
+						}
+
+						done = true;
+					} else if (modelElement instanceof EndEvent) {
+						// notifies all of ending
+						functions += "        end();\n";
+						for (String p : participantsWithoutDuplicates) {
+							if (partId.compareTo(p) != 0)
+								functions += "        " + p.substring(0, 1).toLowerCase() + p.substring(1) + "end();\n";
+						}
+
+						done = true;
+					}
+
+					// assumes that there are no other possibilities
+				} while (!done);
+
+				functions += "    }\n\n";
+			}
+		}
+
+		// TODO for every gateway take an action at opening
+		return functions;
+	}
+
+	private String getGatewayFunctions(String partId) {
+		String functions="\n";
+		
+		for(Gateway gw : gateways) {
+			if(isGatewayOpen(gw)) {
+				functions+="    function opening_"+gw.getId()+"() {\n";
+				if(gw instanceof ExclusiveGateway) {
+					
+					//gw.getOutgoing().stream().filter(sf->sf.getName());
+					//TODO controllare che nei nomi dei SequenceFlow uscenti, la variabile appartenga a questo contratto e in tal caso fare la condizione con gli if tipo quella che sta nell'esempio
+				}else if(gw instanceof ParallelGateway) {
+					//TODO controllare se tra i nodi uscenti c'è un task che riguarda il proprio contratto. Chiamarlo se il mittente è partId altrimenti se il mittente è ext e il ricevente è partId, abilitarlo
+					//gw.getOutgoing().stream()
+					
+				}else if(gw instanceof EventBasedGateway) {
+					//TODO non per adesso
+				}
+			}
+		}
+		
+		functions+="    }\n\n";
+		
+		// TODO
+		return functions;
+	}
+
+	private boolean isChoreographyTask(ModelElementInstance modelElement) {
+		if (modelElement instanceof ModelElementInstanceImpl && !(modelElement instanceof EndEvent)
+				&& !(modelElement instanceof ParallelGateway) && !(modelElement instanceof ExclusiveGateway)
+				&& !(modelElement instanceof EventBasedGateway))
+			return true;
+		else
+			return false;
+	}
+
+	private boolean isGateway(ModelElementInstance modelElement) {
+		if ((modelElement instanceof ParallelGateway) || (modelElement instanceof ExclusiveGateway)
+				|| (modelElement instanceof EventBasedGateway))
+			return true;
+		else
+			return false;
+	}
+
+	private boolean isGatewayOpen(Gateway gateway) {
+		if (gateway.getIncoming().size() == 1 && gateway.getOutgoing().size() > 1)
+			return true;
+		else if (gateway.getIncoming().size() > 1 && gateway.getOutgoing().size() == 1)
+			return false;
+		System.out.println(gateway.getId() + " incoming: " + gateway.getIncoming().size() + " - outgoing: "
+				+ gateway.getOutgoing().size());
+		throw new IllegalArgumentException();
 	}
 }

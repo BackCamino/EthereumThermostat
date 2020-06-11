@@ -2,8 +2,8 @@
 <bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xs="http://www.w3.org/2001/XMLSchema" id="_tTv5YOycEeiHGOQ2NkJZNQ" targetNamespace="http://www.signavio.com">
   <bpmn2:message id="Message_15a838m" name="comunicateHeaterStatus(int actualStatus = status)" />
   <bpmn2:message id="Message_03glvhc" name="setStatus(int status)" />
-  <bpmn2:message id="Message_1yycinj" name="heatOff(bool heat = false)" />
-  <bpmn2:message id="Message_0e4vprj" name="heatOn(bool heat = true)" />
+  <bpmn2:message id="Message_1yycinj" name="heat(bool heat = false)" />
+  <bpmn2:message id="Message_0e4vprj" name="heat(bool heat = true)" />
   <bpmn2:message id="Message_0m1noiz" name="setTemp(int temp)" />
   <bpmn2:message id="Message_0x7sv2e" name="shutDown(bool shutDown)" />
   <bpmn2:message id="Message_1ksm8jv" name="setThreshold(int threshold)" />
@@ -85,11 +85,11 @@
     <bpmn2:sequenceFlow id="SequenceFlow_0m94vin" name="shutDown == false" sourceRef="ExclusiveGateway_1wd1mbz" targetRef="ExclusiveGateway_086nj7m" />
     <bpmn2:exclusiveGateway id="ExclusiveGateway_0g1cgro">
       <bpmn2:incoming>SequenceFlow_1wkldwa</bpmn2:incoming>
-      <bpmn2:incoming>SequenceFlow_0qj2hid</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_1v5ks1x</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
     <bpmn2:parallelGateway id="ParallelGateway_0893hqb">
       <bpmn2:incoming>SequenceFlow_1v5ks1x</bpmn2:incoming>
+      <bpmn2:incoming>SequenceFlow_0qj2hid</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_0xvkw7s</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_06ux5ki</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_1why3h3</bpmn2:outgoing>
@@ -157,7 +157,7 @@
       <bpmn2:outgoing>SequenceFlow_1wu2zyy</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="SequenceFlow_02yo8w2" sourceRef="ChoreographyTask_1xx5m39" targetRef="ExclusiveGateway_1o7k5m2" />
-    <bpmn2:sequenceFlow id="SequenceFlow_0qj2hid" name="shutDown==false" sourceRef="ExclusiveGateway_1o7k5m2" targetRef="ExclusiveGateway_0g1cgro" />
+    <bpmn2:sequenceFlow id="SequenceFlow_0qj2hid" name="shutDown==false" sourceRef="ExclusiveGateway_1o7k5m2" targetRef="ParallelGateway_0893hqb" />
     <bpmn2:endEvent id="EndEvent_14ddfbw">
       <bpmn2:incoming>SequenceFlow_1wu2zyy</bpmn2:incoming>
     </bpmn2:endEvent>
@@ -383,10 +383,10 @@
       <bpmndi:BPMNEdge id="SequenceFlow_0qj2hid_di" bpmnElement="SequenceFlow_0qj2hid">
         <di:waypoint x="2043" y="120" />
         <di:waypoint x="2043" y="-53" />
-        <di:waypoint x="271" y="-42" />
-        <di:waypoint x="271" y="131" />
+        <di:waypoint x="384" y="-53" />
+        <di:waypoint x="384" y="131" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1115" y="-66" width="86" height="14" />
+          <dc:Bounds x="1171" y="-71" width="85" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="EndEvent_14ddfbw_di" bpmnElement="EndEvent_14ddfbw">
