@@ -573,22 +573,51 @@ public class Translator {
 					for (SequenceFlow seqF : gw.getOutgoing()) {
 						ModelElementInstance modelElement = modelInstance
 								.getModelElementById(seqF.getAttributeValue("targetRef"));
-						if (isChoreographyTask(modelElement)) {
-							ChoreographyTask ct = new ChoreographyTask((ModelElementInstanceImpl) modelElement,
-									modelInstance);
-							if (ct.initialParticipant.getName().compareTo(partId) == 0) {
-								Collection<Variable> variables = getVariables(ct.getRequest().getMessage(), partId);
-								functions += "        " + ct.getRequest().getMessage().getName().split("\\(")[0] + "(";
-								for (Variable varm : variables) {
-									functions += varm.getValue();
+						boolean done = false;
+						do {
+							if (isChoreographyTask(modelElement)) {
+								ChoreographyTask ct = new ChoreographyTask((ModelElementInstanceImpl) modelElement,
+										modelInstance);
+								if (ct.initialParticipant.getName().compareTo(partId) == 0) {
+									Collection<Variable> variables = getVariables(ct.getRequest().getMessage(), partId);
+									functions += "        " + ct.getRequest().getMessage().getName().split("\\(")[0]
+											+ "();\n";
+								} else if (ct.getParticipantRef().getName().compareTo(partId) == 0
+										&& isExtern(ct.getInitialParticipant())) {
+									functions += "        enable_"
+											+ ct.getRequest().getMessage().getName().split("\\(")[0] + "();\n";
 								}
-
-								functions += ");\n";
-							} else if (ct.getParticipantRef().getName().compareTo(partId) == 0
-									&& isExtern(ct.getInitialParticipant())) {
-								// non mi ricordo il file di testo
-							}
-						}
+								done=true; //TODO check this line
+							} else if (isGateway(modelElement)) { //TODO check this block
+								Gateway consideredGw = (Gateway) modelElement;
+								if (isGatewayOpen(consideredGw)) {
+									for (String p : participantsWithoutDuplicates) {
+										functions += "            ";
+										if (!p.equals(partId))
+											functions += p.substring(0, 1).toLowerCase() + p.substring(1, p.length())
+													+ ".";
+										functions += "opening_" + consideredGw.getId() + "();\n";
+									}
+									done = true;
+								} else {
+									modelElement = modelInstance
+											.getModelElementById(((Gateway) modelElement).getOutgoing().stream()
+													.findAny().orElseThrow().getAttributeValue("targetRef"));
+									
+									// TODO nothing
+								}
+							} else if (modelElement instanceof EndEvent) {
+								for (String p : participantsWithoutDuplicates) {
+									functions += "            ";
+									if (!p.equals(partId))
+										functions += p.substring(0, 1).toLowerCase() + p.substring(1, p.length()) + ".";
+									functions += "end();\n";
+								}
+								done = true;
+							}						
+						} while (!done);
+						// TODO se non è task, controllare che sia un gateway aperto oppure se è un
+						// gateway chiuso, saltarlo e continuare
 					}
 
 				} else if (gw instanceof EventBasedGateway) {
