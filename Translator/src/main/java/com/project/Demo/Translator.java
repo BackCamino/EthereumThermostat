@@ -24,7 +24,6 @@ import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.xml.impl.instance.ModelElementInstanceImpl;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
-import org.joda.time.format.ISOPeriodFormat;
 
 public class Translator {
 
@@ -37,12 +36,13 @@ public class Translator {
 	private ArrayList<String> externParticipants;
 	private ArrayList<String> externParticipantsWithoutDuplicates;
 	private Collection<ChoreographyTask> chorTasks;
+	private Collection<Variable> contractParams;
 	private Collection<Gateway> gateways;
 	private String solidityFile;
 
 	public static void main(String[] args) {
 		Translator translator = new Translator();
-		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn
+		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn  ./diagram_old.bpmn ./diagram.bpmn
 		try {
 			translator.run(bpnmFile);
 		} catch (Exception e) {
@@ -119,13 +119,13 @@ public class Translator {
 	 */
 	private String getContractParams(String contractName) {
 		String params = "\n";
-		Set<Variable> variables = new HashSet<>();
+		contractParams = new HashSet<>();
 		for (MessageFlow mFlow : messageFlows) {
 			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0)
-				variables.addAll(getVariables(mFlow.getMessage()));
+				contractParams.addAll(getVariables(mFlow.getMessage(), contractName));
 		}
 		// define attributes
-		for (Variable v : variables) {
+		for (Variable v : contractParams) {
 			params += "    " + v.getType() + " " + v.getName() + ";\n";
 		}
 		return params;
@@ -141,7 +141,7 @@ public class Translator {
 		String events = "\n";
 		for (MessageFlow mFlow : messageFlows) {
 			if (contractName.compareTo(getParticipant(mFlow.getTarget().getId()).getName()) == 0) {
-				Collection<Variable> variables = getVariables(mFlow.getMessage());
+				Collection<Variable> variables = getVariables(mFlow.getMessage(), contractName);
 
 				// define events for changing attributes
 				for (Variable v : variables) {
@@ -180,7 +180,7 @@ public class Translator {
 		String functions = "\n";
 		for (MessageFlow msgFlow : messageFlows) {
 			if (partId.compareTo(getParticipant(msgFlow.getTarget().getId()).getName()) == 0) {
-				Collection<Variable> variables = getVariables(msgFlow.getMessage());
+				Collection<Variable> variables = getVariables(msgFlow.getMessage(), partId);
 
 				functions += "    function " + msgFlow.getMessage().getName().split("\\(")[0] + " (";
 				Iterator<Variable> iter = variables.iterator();
@@ -215,7 +215,7 @@ public class Translator {
 		for (MessageFlow msgFlow : messageFlows) {
 			// TODO check if target participant is not extern
 			if (partId.compareTo(getParticipant(msgFlow.getSource().getId()).getName()) == 0) {
-				Collection<Variable> variables = getVariables(msgFlow.getMessage());
+				Collection<Variable> variables = getVariables(msgFlow.getMessage(), partId);
 
 				String funName = msgFlow.getMessage().getName().split("\\(")[0];
 				functions += "    function " + funName + " () private {\n";
@@ -290,7 +290,7 @@ public class Translator {
 	 * @param msg
 	 * @return
 	 */
-	private Collection<Variable> getVariables(Message msg) {
+	private Collection<Variable> getVariables(Message msg, String contract) {
 		HashSet<Variable> res = new HashSet<>();
 
 		for (String var : msg.getName().split("\\(")[1].replace(")", "").trim().split("\\,")) {
@@ -299,7 +299,7 @@ public class Translator {
 			if (varAndValue.length == 2)
 				value = varAndValue[1].trim();
 			String[] varParts = varAndValue[0].trim().split(" ");
-			res.add(new Variable(varParts[0], varParts[1], value));
+			res.add(new Variable(varParts[0], varParts[1], value, contract));
 		}
 		return res;
 	}
@@ -377,7 +377,7 @@ public class Translator {
 					|| task.getParticipantRef().getName().compareTo(partId) == 0) {
 				if (task.getInitialParticipant().getName().compareTo(partId) == 0) {
 					// create function that sets variables and calls other contract method
-					Collection<Variable> variables = getVariables(task.getRequest().getMessage());
+					Collection<Variable> variables = getVariables(task.getRequest().getMessage(), partId);
 
 					String funName = task.getRequest().getMessage().getName().split("\\(")[0];
 					functions += "    function " + funName + " () public {\n";
@@ -390,7 +390,7 @@ public class Translator {
 					functions = functions.substring(0, functions.length() - 2); // remove ", "
 					functions += ");\n";
 				} else { // is receiving
-					Collection<Variable> variables = getVariables(task.getRequest().getMessage());
+					Collection<Variable> variables = getVariables(task.getRequest().getMessage(), task.getParticipantRef().getName());
 
 					functions += "    function " + task.getRequest().getMessage().getName().split("\\(")[0] + " (";
 					Iterator<Variable> iter = variables.iterator();
@@ -488,23 +488,75 @@ public class Translator {
 			if(isGatewayOpen(gw)) {
 				functions+="    function opening_"+gw.getId()+"() {\n";
 				if(gw instanceof ExclusiveGateway) {
-					
 					//gw.getOutgoing().stream().filter(sf->sf.getName());
 					//TODO controllare che nei nomi dei SequenceFlow uscenti, la variabile appartenga a questo contratto e in tal caso fare la condizione con gli if tipo quella che sta nell'esempio
-				}else if(gw instanceof ParallelGateway) {
+					for(SequenceFlow seqF : gw.getOutgoing()) {
+						for(Variable var : contractParams) {
+							if(var.getContract() != null) {
+								if(getVariableNameFromCondition(seqF.getName()).compareTo(var.getName()) == 0 
+										&& var.getContract().compareTo(partId) == 0) {
+									functions += "        if(" + seqF.getName() + ") {\n";
+									
+									ModelElementInstance modelElement = modelInstance.getModelElementById(
+											seqF.getAttributeValue("targetRef"));
+									
+									if(isChoreographyTask(modelElement)) {
+										ChoreographyTask ct = new ChoreographyTask((ModelElementInstanceImpl) modelElement,
+												modelInstance);
+										Collection<Variable> variables = getVariables(ct.getRequest().getMessage(),partId);
+										functions += "            " + ct.getParticipantRef().getName().toLowerCase() 
+												+ "." + ct.getRequest().getMessage().getName().split("\\(")[0] + "(";
+										for(Variable varm : variables) {
+											functions += varm.getValue();
+										}
+										
+										functions += ");\n";
+									}
+									
+									functions += "        }\n";
+									
+								}
+							}
+						}
+					}
+				} else if(gw instanceof ParallelGateway) {
 					//TODO controllare se tra i nodi uscenti c'è un task che riguarda il proprio contratto. Chiamarlo se il mittente è partId altrimenti se il mittente è ext e il ricevente è partId, abilitarlo
 					//gw.getOutgoing().stream()
+					for(SequenceFlow seqF : gw.getOutgoing()) {
+						ModelElementInstance modelElement = modelInstance.getModelElementById(
+								seqF.getAttributeValue("targetRef"));
+						if(isChoreographyTask(modelElement)) {
+							ChoreographyTask ct = new ChoreographyTask((ModelElementInstanceImpl) modelElement,
+									modelInstance);
+							if(ct.initialParticipant.getName().compareTo(partId) == 0) {
+								Collection<Variable> variables = getVariables(ct.getRequest().getMessage(),partId);
+								functions += "        " + ct.getRequest().getMessage().getName().split("\\(")[0] + "(";
+								for(Variable varm : variables) {
+									functions += varm.getValue();
+								}
+								
+								functions += ");\n";
+							}
+							else if(ct.getParticipantRef().getName().compareTo(partId) == 0 
+									&& isExtern(ct.getInitialParticipant())) {
+								// non mi ricordo il file di testo
+							}
+						}
+					}
 					
 				}else if(gw instanceof EventBasedGateway) {
 					//TODO non per adesso
 				}
+				functions += "    }\n";
 			}
 		}
 		
-		functions+="    }\n\n";
-		
 		// TODO
 		return functions;
+	}
+	
+	private String getVariableNameFromCondition(String condition) {
+		return condition.split(" ")[0];
 	}
 
 	private boolean isChoreographyTask(ModelElementInstance modelElement) {
