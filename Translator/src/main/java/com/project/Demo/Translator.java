@@ -24,6 +24,7 @@ import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 import org.camunda.bpm.model.xml.impl.instance.ModelElementInstanceImpl;
 import org.camunda.bpm.model.xml.instance.ModelElementInstance;
+import org.joda.time.format.ISOPeriodFormat;
 
 public class Translator {
 
@@ -42,7 +43,8 @@ public class Translator {
 
 	public static void main(String[] args) {
 		Translator translator = new Translator();
-		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn  ./diagram_old.bpmn ./diagram.bpmn
+		File bpnmFile = new File("./diagram.bpmn"); // ./model.bpmn ./test_diagram.bpmn ./diagram_old.bpmn
+													// ./diagram.bpmn
 		try {
 			translator.run(bpnmFile);
 		} catch (Exception e) {
@@ -70,16 +72,12 @@ public class Translator {
 		String intro = "pragma solidity ^0.6.9;\n";
 		intro += "\nenum State {DISABLED, ENABLED}\n";
 		for (String participant : participantsWithoutDuplicates) {
-			intro += "\ncontract " + participant + " {" 
-					+ getContractParams(participant) 
-					+ getAddresses(participant)
+			intro += "\ncontract " + participant + " {" + getContractParams(participant) + getAddresses(participant)
 					+ getContractsVariables(participant) +
 					// getOutgoingMessagesFunctions(participant)+
 					getEvents(participant) +
 					// getSetterFunctions(participant) +
-					getTaskFunctions(participant) + 
-					getGatewayFunctions(participant) +
-					"}\n";
+					getTaskFunctions(participant) + getGatewayFunctions(participant) + "}\n";
 		}
 		return intro;
 	}
@@ -390,7 +388,8 @@ public class Translator {
 					functions = functions.substring(0, functions.length() - 2); // remove ", "
 					functions += ");\n";
 				} else { // is receiving
-					Collection<Variable> variables = getVariables(task.getRequest().getMessage(), task.getParticipantRef().getName());
+					Collection<Variable> variables = getVariables(task.getRequest().getMessage(),
+							task.getParticipantRef().getName());
 
 					functions += "    function " + task.getRequest().getMessage().getName().split("\\(")[0] + " (";
 					Iterator<Variable> iter = variables.iterator();
@@ -410,10 +409,9 @@ public class Translator {
 					if (isExtern(task.getInitialParticipant())) { // setter message from extern
 
 						// TODO
-					} else { // message from other function
+					} else { // message from other function because sender will trigger next task
 						functions += "    }\n\n";
 						continue;
-						// TODO
 					}
 				}
 
@@ -482,79 +480,128 @@ public class Translator {
 	}
 
 	private String getGatewayFunctions(String partId) {
-		String functions="\n";
-		
-		for(Gateway gw : gateways) {
-			if(isGatewayOpen(gw)) {
-				functions+="    function opening_"+gw.getId()+"() {\n";
-				if(gw instanceof ExclusiveGateway) {
-					//gw.getOutgoing().stream().filter(sf->sf.getName());
-					//TODO controllare che nei nomi dei SequenceFlow uscenti, la variabile appartenga a questo contratto e in tal caso fare la condizione con gli if tipo quella che sta nell'esempio
-					for(SequenceFlow seqF : gw.getOutgoing()) {
-						for(Variable var : contractParams) {
-							if(var.getContract() != null) {
-								if(getVariableNameFromCondition(seqF.getName()).compareTo(var.getName()) == 0 
+		String functions = "\n";
+
+		for (Gateway gw : gateways) {
+			if (isGatewayOpen(gw)) {
+				functions += "    function opening_" + gw.getId() + "() {\n";
+				if (gw instanceof ExclusiveGateway) {
+					// gw.getOutgoing().stream().filter(sf->sf.getName());
+					// TODO controllare che nei nomi dei SequenceFlow uscenti, la variabile
+					// appartenga a questo contratto e in tal caso fare la condizione con gli if
+					// tipo quella che sta nell'esempio
+					for (SequenceFlow seqF : gw.getOutgoing()) {
+						for (Variable var : contractParams) {
+							if (var.getContract() != null) {
+								if (getVariableNameFromCondition(seqF.getName()).compareTo(var.getName()) == 0
 										&& var.getContract().compareTo(partId) == 0) {
 									functions += "        if(" + seqF.getName() + ") {\n";
-									
-									ModelElementInstance modelElement = modelInstance.getModelElementById(
-											seqF.getAttributeValue("targetRef"));
-									
-									if(isChoreographyTask(modelElement)) {
-										ChoreographyTask ct = new ChoreographyTask((ModelElementInstanceImpl) modelElement,
-												modelInstance);
-										Collection<Variable> variables = getVariables(ct.getRequest().getMessage(),partId);
-										functions += "            " + ct.getParticipantRef().getName().toLowerCase() 
-												+ "." + ct.getRequest().getMessage().getName().split("\\(")[0] + "(";
-										for(Variable varm : variables) {
-											functions += varm.getValue();
+
+									ModelElementInstance modelElement = modelInstance
+											.getModelElementById(seqF.getAttributeValue("targetRef"));
+
+									boolean done = false;
+									do {
+										if (isChoreographyTask(modelElement)) {
+											ChoreographyTask ct = new ChoreographyTask(
+													(ModelElementInstanceImpl) modelElement, modelInstance);
+											Collection<Variable> variables = getVariables(ct.getRequest().getMessage(),
+													partId);
+											String msgName = ct.getRequest().getMessage().getName().split("\\(")[0];
+											if (ct.getInitialParticipant().getName().equals(partId)) {
+												// if this is the contract to call the function
+												functions += "            " + msgName + "();\n";
+											} else if (isExtern(ct.getInitialParticipant())
+													&& ct.getParticipantRef().getName().equals(partId)) {
+												// if sender is ext and receiver is this contract
+												functions += "            enable_" + msgName + "();\n";
+											} else {
+												functions += "            "
+														+ ct.getParticipantRef().getName().toLowerCase() + "."
+														+ ct.getRequest().getMessage().getName().split("\\(")[0]
+														+ "();\n";
+											}
+											done = true;
+											/*
+											 * functions += "            " +
+											 * ct.getParticipantRef().getName().toLowerCase() + "." +
+											 * ct.getRequest().getMessage().getName().split("\\(")[0] + "(";
+											 * for(Variable varm : variables) { functions += varm.getValue(); }
+											 * 
+											 * functions += ");\n";
+											 */
+										} else if (isGateway(modelElement)) {
+											Gateway consideredGw = (Gateway) modelElement;
+											if (isGatewayOpen(consideredGw)) {
+												for (String p : participantsWithoutDuplicates) {
+													functions += "            ";
+													if (!p.equals(partId))
+														functions += p.substring(0, 1).toLowerCase()
+																+ p.substring(1, p.length()) + ".";
+													functions += "opening_" + consideredGw.getId() + "();\n";
+												}
+												done = true;
+											} else {
+												modelElement = modelInstance.getModelElementById(
+														((Gateway) modelElement).getOutgoing().stream().findAny()
+																.orElseThrow().getAttributeValue("targetRef"));
+												// TODO nothing
+											}
+										} else if (modelElement instanceof EndEvent) {
+											for (String p : participantsWithoutDuplicates) {
+												functions += "            ";
+												if (!p.equals(partId))
+													functions += p.substring(0, 1).toLowerCase()
+															+ p.substring(1, p.length()) + ".";
+												functions += "end();\n";
+											}
+											done = true;
 										}
-										
-										functions += ");\n";
-									}
-									
+									} while (!done);
+
 									functions += "        }\n";
-									
+
 								}
 							}
 						}
 					}
-				} else if(gw instanceof ParallelGateway) {
-					//TODO controllare se tra i nodi uscenti c'è un task che riguarda il proprio contratto. Chiamarlo se il mittente è partId altrimenti se il mittente è ext e il ricevente è partId, abilitarlo
-					//gw.getOutgoing().stream()
-					for(SequenceFlow seqF : gw.getOutgoing()) {
-						ModelElementInstance modelElement = modelInstance.getModelElementById(
-								seqF.getAttributeValue("targetRef"));
-						if(isChoreographyTask(modelElement)) {
+				} else if (gw instanceof ParallelGateway) {
+					// TODO controllare se tra i nodi uscenti c'è un task che riguarda il proprio
+					// contratto. Chiamarlo se il mittente è partId altrimenti se il mittente è ext
+					// e il ricevente è partId, abilitarlo
+					// gw.getOutgoing().stream()
+					for (SequenceFlow seqF : gw.getOutgoing()) {
+						ModelElementInstance modelElement = modelInstance
+								.getModelElementById(seqF.getAttributeValue("targetRef"));
+						if (isChoreographyTask(modelElement)) {
 							ChoreographyTask ct = new ChoreographyTask((ModelElementInstanceImpl) modelElement,
 									modelInstance);
-							if(ct.initialParticipant.getName().compareTo(partId) == 0) {
-								Collection<Variable> variables = getVariables(ct.getRequest().getMessage(),partId);
+							if (ct.initialParticipant.getName().compareTo(partId) == 0) {
+								Collection<Variable> variables = getVariables(ct.getRequest().getMessage(), partId);
 								functions += "        " + ct.getRequest().getMessage().getName().split("\\(")[0] + "(";
-								for(Variable varm : variables) {
+								for (Variable varm : variables) {
 									functions += varm.getValue();
 								}
-								
+
 								functions += ");\n";
-							}
-							else if(ct.getParticipantRef().getName().compareTo(partId) == 0 
+							} else if (ct.getParticipantRef().getName().compareTo(partId) == 0
 									&& isExtern(ct.getInitialParticipant())) {
 								// non mi ricordo il file di testo
 							}
 						}
 					}
-					
-				}else if(gw instanceof EventBasedGateway) {
-					//TODO non per adesso
+
+				} else if (gw instanceof EventBasedGateway) {
+					// TODO non per adesso
 				}
-				functions += "    }\n";
+				functions += "    }\n\n";
 			}
 		}
-		
+
 		// TODO
 		return functions;
 	}
-	
+
 	private String getVariableNameFromCondition(String condition) {
 		return condition.split(" ")[0];
 	}

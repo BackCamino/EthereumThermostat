@@ -157,7 +157,7 @@
       <bpmn2:outgoing>SequenceFlow_1wu2zyy</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="SequenceFlow_02yo8w2" sourceRef="ChoreographyTask_1xx5m39" targetRef="ExclusiveGateway_1o7k5m2" />
-    <bpmn2:sequenceFlow id="SequenceFlow_0qj2hid" name="shutDown==false" sourceRef="ExclusiveGateway_1o7k5m2" targetRef="ExclusiveGateway_0g1cgro" />
+    <bpmn2:sequenceFlow id="SequenceFlow_0qj2hid" name="shutDown == false" sourceRef="ExclusiveGateway_1o7k5m2" targetRef="ExclusiveGateway_0g1cgro" />
     <bpmn2:endEvent id="EndEvent_14ddfbw">
       <bpmn2:incoming>SequenceFlow_1wu2zyy</bpmn2:incoming>
     </bpmn2:endEvent>
