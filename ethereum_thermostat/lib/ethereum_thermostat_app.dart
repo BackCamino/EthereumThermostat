@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:ethereumthermostat/pages/home_page.dart';
 import 'package:ethereumthermostat/routes.dart';
-import 'package:ethereumthermostat/services/thermostat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'model/thermostat_model.dart';
+import 'models/thermostat_model.dart';
 
 class EthereumThermostatApp extends StatefulWidget {
   @override
@@ -34,7 +33,9 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
     ));
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<ThermostatModel>(create: (_) => ThermostatModel(currentThreshold: 20, preCent: 0.37),)
+        ChangeNotifierProvider<ThermostatModel>(
+          create: (_) => ThermostatModel(currentThreshold: 20, preCent: 0.37),
+        )
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

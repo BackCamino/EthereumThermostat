@@ -1,0 +1,83 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "thermostatAddr",
+                "type": "address"
+            },
+            {
+                "internalType": "int16",
+                "name": "initialTemp",
+                "type": "int16"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "int16",
+                "name": "newTemp",
+                "type": "int16"
+            }
+        ],
+        "name": "TempChanged",
+        "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "getTemp",
+        "outputs": [
+            {
+                "internalType": "int16",
+                "name": "",
+                "type": "int16"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "setNewOwner",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "int16",
+                "name": "newTemp",
+                "type": "int16"
+            }
+        ],
+        "name": "setTemp",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "thermostatAddr",
+                "type": "address"
+            }
+        ],
+        "name": "setThermostat",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]
