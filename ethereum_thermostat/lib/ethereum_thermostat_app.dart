@@ -1,12 +1,12 @@
 import 'dart:io';
-
-import 'package:ethereumthermostat/home_page.dart';
-import 'package:ethereumthermostat/redux/app/app_state.dart';
-import 'package:ethereumthermostat/redux/store.dart';
+import 'package:ethereumthermostat/pages/home_page.dart';
+import 'package:ethereumthermostat/routes.dart';
+import 'package:ethereumthermostat/services/thermostat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_redux/flutter_redux.dart';
-import 'package:redux/redux.dart';
+import 'package:provider/provider.dart';
+
+import 'model/thermostat_model.dart';
 
 class EthereumThermostatApp extends StatefulWidget {
   @override
@@ -14,11 +14,10 @@ class EthereumThermostatApp extends StatefulWidget {
 }
 
 class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
-  Store<AppState> store;
+  static final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
-    store = createStore();
     super.initState();
   }
 
@@ -27,18 +26,25 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Platform.isAndroid ? Brightness.dark : Brightness.light,
+      statusBarBrightness:
+          Platform.isAndroid ? Brightness.dark : Brightness.light,
       systemNavigationBarColor: Colors.white,
       systemNavigationBarDividerColor: Colors.grey,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
-    return StoreProvider(
-      store: store,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThermostatModel>(create: (_) => ThermostatModel(currentThreshold: 20, preCent: 0.37),)
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         home: HomePage(),
+        navigatorKey: _navigatorKey,
+        routes: Routes.route(),
+        onGenerateRoute: (settings) => Routes.onGenerateRoute(settings),
+        onUnknownRoute: (settings) => Routes.onUnknownRoute(settings),
+        initialRoute: "HomePage",
       ),
     );
   }
 }
-
