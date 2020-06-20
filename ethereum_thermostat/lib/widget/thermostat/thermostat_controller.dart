@@ -1,7 +1,6 @@
 import 'package:ethereumthermostat/model/thermostat_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
-
 import 'package:provider/provider.dart';
 
 class ThermostatController extends StatelessWidget {
