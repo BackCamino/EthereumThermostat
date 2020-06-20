@@ -1,6 +1,5 @@
 import 'dart:math';
-import 'package:ethereumthermostat/model/thermostat_model.dart';
-import 'package:ethereumthermostat/services/thermostat_service.dart';
+import 'package:ethereumthermostat/models/thermostat_model.dart';
 import 'package:ethereumthermostat/widget/thermostat/thermostat.dart';
 import 'package:ethereumthermostat/widget/thermostat/thermostat_container.dart';
 import 'package:flutter/material.dart';

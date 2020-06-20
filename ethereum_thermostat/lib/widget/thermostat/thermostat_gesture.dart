@@ -1,4 +1,4 @@
-import 'package:ethereumthermostat/model/thermostat_model.dart';
+import 'package:ethereumthermostat/models/thermostat_model.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttery_dart2/animations.dart';
 import 'package:provider/provider.dart';
