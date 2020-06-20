@@ -8,13 +8,14 @@ import "../helpers/Switchable.sol";
 
 import {StringUtils} from "../helpers/StringUtils.sol";
 
-
 // TODO setStatus onlyOwner
 
 contract Thermostat is Subscriber, Owned, Switchable(Status.OFF) {
     Heater private heater;
     Sensor private sensor;
     int16 private threshold;
+
+    event ThresholdChanged(int16 _threshold);
 
     /// an initial threshold must be provided
     constructor(int16 _threshold) public {
@@ -73,6 +74,7 @@ contract Thermostat is Subscriber, Owned, Switchable(Status.OFF) {
         onlyOwner
     {
         threshold = _threshold;
+        emit ThresholdChanged(threshold);
         update(sensor.getTemp(), threshold);
     }
 
