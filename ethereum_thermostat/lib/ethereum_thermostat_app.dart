@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'package:ethereumthermostat/models/app_model.dart';
+import 'package:ethereumthermostat/models/bottom_nav_model.dart';
 import 'package:ethereumthermostat/pages/home_page.dart';
 import 'package:ethereumthermostat/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-
 import 'models/thermostat_model.dart';
 
 class EthereumThermostatApp extends StatefulWidget {
@@ -33,8 +34,14 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
     ));
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<AppModel>(
+          create: (_) => AppModel(navigatorKey: _navigatorKey),
+        ),
         ChangeNotifierProvider<ThermostatModel>(
-          create: (_) => ThermostatModel(currentThreshold: 20, preCent: 0.37),
+          create: (_) => ThermostatModel(currentThreshold: 20, preCent: 0.32),
+        ),
+        ChangeNotifierProvider<BottomNavModel>(
+          create: (_) => BottomNavModel(currentTabIndex: 0),
         )
       ],
       child: MaterialApp(
@@ -44,7 +51,7 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
         routes: Routes.route(),
         onGenerateRoute: (settings) => Routes.onGenerateRoute(settings),
         onUnknownRoute: (settings) => Routes.onUnknownRoute(settings),
-        initialRoute: "HomePage",
+        initialRoute: "SplashPage",
       ),
     );
   }

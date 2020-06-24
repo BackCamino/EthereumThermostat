@@ -35,12 +35,12 @@ class _CircleGestureDetectorState extends State<CircleGestureDetector> {
           _currentDragPreCent = dragValue ?? 0.0;
           Provider.of<ThermostatModel>(context, listen: false).setPrecent(_currentDragPreCent ?? _seekPrecent);
           Provider.of<ThermostatModel>(context, listen: false).setThreshold(max1);
-          print('current threshold : ${max1 + 10}');
       });
     }
   }
 
   onRadialDragEnd(){
+    /* Aggiungere chiamata contratto qui */
       setState(() {
         _seekPrecent = _currentDragPreCent;
         _currentDragPreCent = null;

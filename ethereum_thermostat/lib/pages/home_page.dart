@@ -1,9 +1,14 @@
-import 'dart:math';
-import 'package:ethereumthermostat/models/thermostat_model.dart';
-import 'package:ethereumthermostat/widget/thermostat/thermostat.dart';
-import 'package:ethereumthermostat/widget/thermostat/thermostat_container.dart';
+import 'package:ethereumthermostat/models/app_model.dart';
+import 'package:ethereumthermostat/models/bottom_nav_model.dart';
+import 'package:ethereumthermostat/models/config.dart';
+import 'package:ethereumthermostat/models/wallet.dart';
+import 'package:ethereumthermostat/widget/custom_bottom_bar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web3dart/web3dart.dart';
 import '../utils/theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,125 +17,78 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  @override
-  void initState() {
-    super.initState();
-  }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        color: ThermostatAppTheme.background,
-        child: Scaffold(
-            backgroundColor: Colors.transparent,
-            body: Container(
-              margin: EdgeInsets.only(right: 10.0, top: 50.0, left: 10.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(30),
-                    topLeft: Radius.circular(30)),
-                color: Colors.white,
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(top: 30),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: <Widget>[
-                          Icon(
-                            Icons.data_usage,
-                            size: 30,
-                            color: Colors.grey,
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          Consumer<ThermostatModel>(
-                            builder: (context, thermostat, child) {
-                              return Text(
-                                  thermostat.currentThreshold.toString(),
-                                  style: TextStyle(
-                                  fontSize: 80, fontWeight: FontWeight.bold),
-                              );
-                            },
-                          ),
-                          SizedBox(
-                            width: 2,
-                          ),
+    return FutureProvider<WalletModel>(
+      initialData: WalletModel(null, null),
+      create: (context) => setupWallet(),
+      child: Consumer<WalletModel>(
+        builder: (context, wallet, child) {
+          if(wallet != null) {
+            return Consumer<BottomNavModel>(
+              builder: (context, bottomBar, child) {
+                return Container(
+                    color: ThermostatAppTheme.background,
+                    child: Scaffold(
+                      backgroundColor: Colors.transparent,
+                      body: getPage(),
+                      bottomNavigationBar: CustomBottomBar(
+                        items: [
+                          BottomNavigationDotBarItem(
+                              icon: Icons.rss_feed, onTap: () {bottomBar.changeCurrentTabIndex(0);}),
+                          BottomNavigationDotBarItem(
+                              icon: Icons.graphic_eq, onTap: () {bottomBar.changeCurrentTabIndex(1);}),
+                          BottomNavigationDotBarItem(icon: Icons.settings, onTap: () {bottomBar.changeCurrentTabIndex(2);})
                         ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          '°C',
-                          style: TextStyle(color: Colors.grey, fontSize: 20),
-                        ),
+                    )
+                );
+              },
+            );
+          }
+          return Container(
+              color: ThermostatAppTheme.background,
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text('No wallet configurated'),
+                      IconButton(
+                        icon: Icon(Icons.add_circle_outline),
+                        onPressed: () => Provider.of<AppModel>(context, listen: false).navigatorKey.currentState.pushReplacementNamed('/WalletConfigPage'),
                       )
                     ],
-                  ),
+                  )
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text('TEMPERATURE'),
-                ),
-                Flexible(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 20.0),
-                    child: Container(
-                      child: Stack(
-                        children: <Widget>[
-                          Transform.rotate(
-                            angle: (2 * pi) * 0.25,
-                            child: Container(
-                              height: 360,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                              ),
-                              child: Container(
-                                height: double.infinity,
-                                width: double.infinity,
-                                padding: EdgeInsets.all(65),
-                                child: Consumer<ThermostatModel>(
-                                  builder: (context, thermostat, child) {
-                                    return CustomPaint(
-                                      painter: Thermostat(
-                                        currentTem: thermostat.currentThreshold,
-                                      ),
-                                    );
-                                  }
-                                )
-                              ),
-                            ),
-                          ),
-                          Container(
-                            height: 360,
-                            width: double.infinity,
-                            color: Colors.transparent,
-                            child: ThermostatContainer(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 20,
-                )
-              ]),
-            )));
+              )
+          );
+        },
+      ),
+    );
+  }
+
+  Future<WalletModel> setupWallet() async {
+    final web3Client = Web3Client(Config.nodeAddress, Client());
+    final SharedPreferences prefs = await _prefs;
+    final String key = prefs.getString('address_key');
+    if(key != null) {
+      // key trovata
+      return WalletModel(web3Client, await web3Client.credentialsFromPrivateKey(key));
+    }
+    // key non trovata
+    return Future.value(null);
+  }
+
+  Widget getPage() {
+    return Consumer<BottomNavModel>(
+      builder: (context, bottomBar, child) {
+        return bottomBar.pages[bottomBar.currentTabIndex];
+      },
+    );
   }
 }

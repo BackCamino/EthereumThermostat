@@ -1,6 +1,8 @@
 
+import 'package:ethereumthermostat/pages/analitics_page.dart';
 import 'package:ethereumthermostat/pages/home_page.dart';
 import 'package:ethereumthermostat/pages/splash_page.dart';
+import 'package:ethereumthermostat/pages/wallet_configuration_page.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
@@ -19,6 +21,8 @@ class Routes {
     switch (pathElements[1]) {
       case 'ConnectionError': return CustomRoute<bool>(builder: (BuildContext context) => SplashPage());
       case 'HomePage': return CustomRoute<bool>(builder: (BuildContext context) => HomePage());
+      case 'AnaliticsPage': return CustomRoute<bool>(builder: (BuildContext context) => AnaliticsPage());
+      case 'WalletConfigPage': return CustomRoute<bool>(builder: (BuildContext context) => WalletConfigurationPage());
       default: return onUnknownRoute(RouteSettings(name: '/Feature'));
     }
   }
