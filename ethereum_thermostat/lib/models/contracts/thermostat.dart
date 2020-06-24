@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:web3dart/web3dart.dart';
 
+//TODO oppure al posto di fare 3 classi, utilizzare solo quella del termostato perché comunque dal modello riceve tutti i valori e crea gli eventi
+
 class ThermostatContract with ChangeNotifier {
   static const THERMOSTAT_ABI_ASSET = 'assets/abi/Thermostat.json';
 

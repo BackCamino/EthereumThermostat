@@ -3,9 +3,10 @@ pragma solidity ^0.6.1;
 import "../helpers/Owned.sol";
 import "../helpers/PubSub.sol";
 
-
 contract Sensor is Publisher, Owned {
     int16 private temp;
+
+    event TempChanged(int16 temp);
 
     /// Construct a temperature sensor with an initial temp
     constructor(int16 _temp) public {
@@ -18,6 +19,7 @@ contract Sensor is Publisher, Owned {
 
     function setTemp(int16 _temp) public onlyOwner {
         temp = _temp;
+        emit TempChanged(temp);
         publish("tempChanged", bytes32(int256(temp)));
     }
 }
