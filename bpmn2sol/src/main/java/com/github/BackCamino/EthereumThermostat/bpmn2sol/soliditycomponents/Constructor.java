@@ -32,7 +32,7 @@ public class Constructor extends Operation {
 	}
 
 	@Override
-	public String invokation(Value... values) {
+	public String invocation(Value... values) {
 		StringBuilder toPrint = new StringBuilder(this.getName());
 
 		if (values.length == 0)

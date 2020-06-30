@@ -3,22 +3,43 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.Objects;
 
 public class Pragma implements SolidityComponent {
-	private String version;
+    public enum Directives implements SolidityComponent {
+        SOLIDITY,
+        EXPERIMENTAL;
 
-	public Pragma(String version) {
-		Objects.requireNonNull(version);
-		this.version = version;
-	}
+        @Override
+        public String print() {
+            return this.name().toLowerCase();
+        }
+    }
 
-	public String getVersion() {
-		return version;
-	}
+    private Directives directive;
+    private String value;
 
-	public void setVersion(String version) {
-		this.version = version;
-	}
+    public Pragma(Directives directive, String value) {
+        Objects.requireNonNull(directive);
+        Objects.requireNonNull(value);
+        this.directive = directive;
+        this.value = value;
+    }
 
-	public String print() {
-		return "pragma solidity " + version + ";";
-	}
+    public Directives getDirective() {
+        return directive;
+    }
+
+    public void setDirective(Directives directive) {
+        this.directive = directive;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public String print() {
+        return "pragma " + directive + " " + value + ";";
+    }
 }

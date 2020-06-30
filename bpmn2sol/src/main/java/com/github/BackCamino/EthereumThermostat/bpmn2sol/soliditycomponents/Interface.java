@@ -10,7 +10,7 @@ public class Interface implements Extendable {
 	}
 
 	@Override
-	public String invokation(Value... values) {
+	public String invocation(Value... values) {
 		// TODO Auto-generated method stub
 		return null;
 	}

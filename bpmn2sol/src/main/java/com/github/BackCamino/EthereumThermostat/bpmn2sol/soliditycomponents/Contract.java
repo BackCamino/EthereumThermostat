@@ -90,7 +90,7 @@ public class Contract implements Extendable {
 		if (!this.extendeds.isEmpty()) {
 			toPrint.append(" is ");
 			this.extendeds.entrySet().forEach(
-					entry -> toPrint.append(entry.getKey().invokation(entry.getValue().toArray(new Value[0])) + ", "));
+					entry -> toPrint.append(entry.getKey().invocation(entry.getValue().toArray(new Value[0])) + ", "));
 			toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
 		}
 		toPrint.append("{\n");
@@ -107,7 +107,7 @@ public class Contract implements Extendable {
 	}
 
 	@Override
-	public String invokation(Value... values) {
-		return this.constructor.invokation(values);
+	public String invocation(Value... values) {
+		return this.constructor.invocation(values);
 	}
 }
