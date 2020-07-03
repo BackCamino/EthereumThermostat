@@ -1,6 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
-class Variable implements SolidityComponent {
+public class Variable implements SolidityComponent {
     private String name;
     private Type type;
     private Visibility visibility;

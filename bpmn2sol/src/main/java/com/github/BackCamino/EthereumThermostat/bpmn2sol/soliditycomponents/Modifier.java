@@ -3,8 +3,8 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.List;
 import java.util.stream.Stream;
 
-class Modifier extends Operation implements SolidityComponent {
-    class SpecialUnderscore extends Statement {
+public class Modifier extends Operation implements SolidityComponent {
+    public class SpecialUnderscore extends Statement {
         public SpecialUnderscore() {
             super("_;");
         }
@@ -47,7 +47,7 @@ class Modifier extends Operation implements SolidityComponent {
         StringBuilder toPrint = new StringBuilder(this.getName() + "(");
         Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
         if (values.length > 0)
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
+            toPrint.setLength(toPrint.length() - 2);
         toPrint.append(")");
 
         return toPrint.toString();

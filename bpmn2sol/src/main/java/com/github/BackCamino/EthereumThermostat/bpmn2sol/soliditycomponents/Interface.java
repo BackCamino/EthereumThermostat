@@ -1,18 +1,18 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
 public class Interface implements Extendable {
-	// TODO
+    // TODO
 
-	@Override
-	public String print() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String print() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public String invocation(Value... values) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String invocation(Value... values) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-class Function extends Operation {
+public class Function extends Operation {
     private List<Variable> returned;
     private Map<Modifier, List<Value>> modifiers;
     private Markers marker;
@@ -67,20 +67,27 @@ class Function extends Operation {
     @Override
     public String print() {
         StringBuilder toPrint = new StringBuilder("function " + this.getName() + "(");
+        //parameters
         this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.getParameters().size() > 0)
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
+            toPrint.setLength(toPrint.length() - 3);
+        //special modifiers
         toPrint
                 .append(") ")
                 .append(this.getVisibility().print())
                 .append(this.isAbstract() ? " virtual " : " ")
                 .append(this.marker == null ? "" : (this.marker.print() + " "));
+        //returned values
         if (this.returned.size() > 0) {
             toPrint.append("returns(");
             returned.forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
             toPrint.delete(toPrint.length() - 3, toPrint.length() - 1).append(") ");
         }
+        //modifiers
+        this.modifiers.entrySet()
+                .forEach(el -> toPrint.append(el.getKey().invocation(el.getValue().toArray(new Value[0])) + " "));
         toPrint.append("{\n");
+        //statements body
         this.getStatements().forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
         toPrint.append("}");
 

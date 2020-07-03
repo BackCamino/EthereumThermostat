@@ -4,16 +4,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
-class Event implements SolidityComponent, Invokable {
+public class Event implements SolidityComponent, Invokable {
     private List<Variable> parameters;
     private String name;
 
-    Event(String name, List<Variable> parameters) {
+    public Event(String name, List<Variable> parameters) {
         this.name = name;
         this.parameters = new LinkedList<>(parameters);
     }
 
-    Event(String name) {
+    public Event(String name) {
         this(name, List.of());
     }
 
@@ -36,9 +36,9 @@ class Event implements SolidityComponent, Invokable {
     @Override
     public String print() {
         StringBuilder toPrint = new StringBuilder("event " + this.name + "(");
-        this.parameters.forEach(el -> toPrint.append(el.getType() + " " + el.getName() + ", "));
+        this.parameters.forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.parameters.size() > 0)
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
+            toPrint.setLength(toPrint.length() - 3);
         toPrint.append(");");
 
         return toPrint.toString();
@@ -49,7 +49,7 @@ class Event implements SolidityComponent, Invokable {
         StringBuilder toPrint = new StringBuilder("emit " + this.name + "(");
         Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
         if (values.length > 0)
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
+            toPrint.setLength(toPrint.length() - 3);
         toPrint.append(");");
 
         return toPrint.toString();

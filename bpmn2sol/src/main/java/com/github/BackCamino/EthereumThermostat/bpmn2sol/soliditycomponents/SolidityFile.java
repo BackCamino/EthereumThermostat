@@ -6,23 +6,23 @@ import java.util.List;
 
 public class SolidityFile implements SolidityComponent {
     private SPDXLicense license;
-    private Pragma pragma;
+    private List<Pragma> pragmaDirectives;
     private Collection<Import> imports;
     private List<SolidityComponent> components;
 
-    public SolidityFile(Pragma pragma, Collection<Import> imports, List<? extends SolidityComponent> components, SPDXLicense license) {
-        this.pragma = pragma;
+    public SolidityFile(List<Pragma> pragmaDirectives, Collection<Import> imports, List<? extends SolidityComponent> components, SPDXLicense license) {
+        this.pragmaDirectives = new LinkedList<>(pragmaDirectives);
         this.imports = new LinkedList<>(imports);
         this.components = new LinkedList<>(components);
         this.license = license;
     }
 
     public SolidityFile() {
-        this(new PragmaVersion(), List.of(), List.of());
+        this(List.of(new PragmaVersion()), List.of(), List.of(), new SPDXLicense());
     }
 
-    public SolidityFile(Pragma pragma, Collection<Import> imports, List<? extends SolidityComponent> components) {
-        this(pragma, imports, components, new SPDXLicense());
+    public SolidityFile(List<Pragma> pragmaDirectives, Collection<Import> imports, List<? extends SolidityComponent> components) {
+        this(pragmaDirectives, imports, components, new SPDXLicense());
     }
 
     public void addComponent(SolidityComponent component) {
@@ -37,11 +37,13 @@ public class SolidityFile implements SolidityComponent {
     public String print() {
         StringBuilder toPrint = new StringBuilder();
 
-        toPrint.append(pragma.print()).append("\n\n");
+        if (this.license != null) toPrint.append(this.license.print() + "\n");
+        pragmaDirectives.forEach(el -> toPrint.append(el.print() + "\n"));
+        toPrint.append("\n");
         imports.forEach(el -> toPrint.append(el.print()).append("\n"));
         toPrint.append("\n");
         components.forEach(el -> toPrint.append(el.print()).append("\n\n"));
 
-        return toPrint.toString();
+        return toPrint.toString().trim();
     }
 }

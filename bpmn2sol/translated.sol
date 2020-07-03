@@ -1,0 +1,1 @@
+pragma SOLIDITY ^0.6.10;
