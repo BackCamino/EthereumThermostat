@@ -1,15 +1,19 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.SolidityFile;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.ContractsSet;
 import com.sun.tools.javac.Main;
-import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
-import org.camunda.bpm.model.xml.ModelValidationException;
+import org.camunda.bpm.model.bpmn.instance.Participant;
 
 import java.util.logging.Logger;
 
+import static java.util.function.Predicate.not;
+
 public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     private static Logger LOGGER = Logger.getLogger(Main.class.getSimpleName());
+
+    private ContractsSet contracts;
     //TODO
 
     public ChoreographyTranslator(BpmnModelInstance model) {
@@ -31,7 +35,16 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
     @Override
     public SolidityFile translate() {
-        //TODO
+        initializeContracts();
+
         return new SolidityFile();
+    }
+
+    private void initializeContracts() {
+        this.contracts = new ContractsSet();
+        this.getModel().getModelElementsByType(Participant.class)
+                .parallelStream()
+                .filter(not(this::isExtern))
+                .forEach(contracts::add);
     }
 }

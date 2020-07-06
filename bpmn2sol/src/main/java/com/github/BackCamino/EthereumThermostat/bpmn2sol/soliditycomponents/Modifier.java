@@ -4,17 +4,15 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Modifier extends Operation implements SolidityComponent {
-    public class SpecialUnderscore extends Statement {
+    public static class SpecialUnderscore extends Statement {
         public SpecialUnderscore() {
             super("_;");
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof Statement) {
-                if (((Statement) obj).print().equals("_;"))
-                    return true;
-            }
+            if (obj instanceof Statement)
+                return ((Statement) obj).print().equals("_;");
             return false;
         }
     }
@@ -30,12 +28,12 @@ public class Modifier extends Operation implements SolidityComponent {
     @Override
     public String print() {
         StringBuilder toPrint = new StringBuilder("modifier " + this.getName() + "(");
-        this.getParameters().forEach(el -> toPrint.append(el.getType() + " " + el.getName() + ", "));
+        this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.getParameters().size() > 0)
             toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
         toPrint.append(") ");
         if (this.isAbstract()) toPrint.append("virtual ");
-        toPrint.append("{");
+        toPrint.append("{\n");
         this.getStatements().forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
         toPrint.append("}");
 

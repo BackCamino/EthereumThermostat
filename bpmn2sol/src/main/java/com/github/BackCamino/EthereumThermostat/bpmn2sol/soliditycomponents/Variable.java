@@ -41,7 +41,9 @@ public class Variable implements SolidityComponent {
 
     @Override
     public String print() {
-        return this.type.print() + " " + this.name + ";";
+        return this.type.print() + " "
+                + this.visibility.print() + " "
+                + this.name + ";";
     }
 
     public String assignment(Value value) {

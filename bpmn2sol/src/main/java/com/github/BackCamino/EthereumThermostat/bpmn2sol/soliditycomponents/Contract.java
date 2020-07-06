@@ -60,6 +60,14 @@ public class Contract implements Extendable {
         this.name = name;
     }
 
+    public Constructor getConstructor() {
+        return constructor;
+    }
+
+    public void setConstructor(Constructor constructor) {
+        this.constructor = constructor;
+    }
+
     public boolean isAbstract() {
         return isAbstract;
     }
@@ -89,21 +97,19 @@ public class Contract implements Extendable {
         toPrint.append("contract " + this.name);
         if (!this.extendeds.isEmpty()) {
             toPrint.append(" is ");
-            this.extendeds.entrySet().forEach(
-                    entry -> toPrint.append(entry.getKey().invocation(entry.getValue().toArray(new Value[0])) + ", "));
+            this.extendeds.forEach((key, value) -> toPrint.append(key.invocation(value.toArray(new Value[0])) + ", "));
             toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
         }
-        toPrint.append("{\n");
+        toPrint.append(" {\n");
         this.attributes.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
-        toPrint.append("\n");
+        if (!this.attributes.isEmpty()) toPrint.append("\n");
         this.events.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
-        toPrint.append("\n");
-        this.modifiers.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
-        toPrint.append("\n");
-        this.functions.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
-        toPrint.append("\n}");
+        if (!this.events.isEmpty()) toPrint.append("\n");
+        this.modifiers.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n\n"));
+        if (!this.modifiers.isEmpty()) toPrint.append("\n");
+        this.functions.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n\n"));
 
-        return toPrint.toString();
+        return toPrint.toString().trim() + "\n}";
     }
 
     @Override
