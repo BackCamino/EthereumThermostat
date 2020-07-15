@@ -2,6 +2,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class Event implements SolidityComponent, Invokable {
@@ -53,5 +54,19 @@ public class Event implements SolidityComponent, Invokable {
         toPrint.append(");");
 
         return toPrint.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Event)) return false;
+        Event event = (Event) o;
+        return parameters.equals(event.parameters) &&
+                name.equals(event.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(parameters, name);
     }
 }

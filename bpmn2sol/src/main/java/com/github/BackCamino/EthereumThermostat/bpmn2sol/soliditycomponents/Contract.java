@@ -1,11 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Contract implements Extendable {
     private String name;
@@ -115,5 +110,18 @@ public class Contract implements Extendable {
     @Override
     public String invocation(Value... values) {
         return this.constructor == null ? this.name : this.constructor.invocation(values);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Contract)) return false;
+        Contract contract = (Contract) o;
+        return name.equals(contract.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }

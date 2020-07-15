@@ -46,7 +46,11 @@ public class Variable implements SolidityComponent {
                 + this.name + ";";
     }
 
-    public String assignment(Value value) {
-        return this.getName() + " = " + value.getValue() + ";";
+    public Statement assignment(Value value) {
+        return new Statement(this.getName() + " = " + value.getValue() + ";");
+    }
+
+    public Statement assignment(Variable variable) {
+        return new Statement(this.getName() + " = " + variable.getName() + ";");
     }
 }

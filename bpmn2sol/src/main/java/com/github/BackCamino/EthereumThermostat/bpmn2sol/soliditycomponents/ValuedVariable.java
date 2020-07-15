@@ -16,7 +16,7 @@ public class ValuedVariable extends Variable {
         this.value = value;
     }
 
-    public String assignment() {
+    public Statement assignment() {
         return super.assignment(this.value);
     }
 }

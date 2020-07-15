@@ -1,6 +1,5 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.SolidityFile;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.Bpmn2SolidityTranslator;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.ChoreographyTranslator;
 import com.sun.tools.javac.Main;

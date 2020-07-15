@@ -2,6 +2,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class Operation implements SolidityComponent, Invokable {
     private String name;
@@ -15,7 +16,8 @@ public abstract class Operation implements SolidityComponent, Invokable {
                      boolean isAbstract) {
         this.name = name;
         this.visibility = visibility;
-        this.parameters = new LinkedList<>(parameters);
+        this.parameters = new LinkedList<>();
+        parameters.forEach(this::addParameter);
         this.statements = new LinkedList<>(statements);
         this.setAbstract(isAbstract);
     }
@@ -45,6 +47,8 @@ public abstract class Operation implements SolidityComponent, Invokable {
     }
 
     public void addParameter(Variable parameter) {
+        if (!parameter.getName().startsWith("_", 0))
+            parameter.setName("_" + parameter.getName());
         this.parameters.add(parameter);
     }
 
@@ -66,5 +70,19 @@ public abstract class Operation implements SolidityComponent, Invokable {
 
     public void setAbstract(boolean isAbstract) {
         this.isAbstract = isAbstract;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Operation operation = (Operation) o;
+        return name.equals(operation.name) &&
+                parameters.equals(operation.parameters);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, parameters);
     }
 }
