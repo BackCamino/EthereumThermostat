@@ -1,9 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Event;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Type;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Value;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.ValuedVariable;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
 import org.camunda.bpm.model.bpmn.instance.Message;
 
 import java.util.LinkedList;
@@ -11,9 +8,9 @@ import java.util.List;
 
 public class VariablesParser {
     public static List<ValuedVariable> variables(Message message) {
-        String variablesString = message.getName().split("\\(")[0];
-        variablesString = variablesString.substring(0, variablesString.indexOf(")") - 1);
-
+        String variablesString = message.getName().split("\\(")[1];
+        variablesString = variablesString.substring(0, variablesString.indexOf(")"));
+        
         List<ValuedVariable> variables = new LinkedList<>();
         for (String v : variablesString.split(", ")) {
             Value value = null;
@@ -34,5 +31,13 @@ public class VariablesParser {
         variables(message).forEach(el -> events.add(new Event(FunctionParser.nameFunction(message), List.of(el))));
 
         return events;
+    }
+
+    public static boolean isExtern(Value value){
+        return value.print().startsWith("ext_");
+    }
+
+    public static boolean isExtern(Variable variable){
+        return variable.getName().startsWith("ext_");
     }
 }

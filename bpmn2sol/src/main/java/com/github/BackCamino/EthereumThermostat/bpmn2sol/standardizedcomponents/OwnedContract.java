@@ -18,7 +18,7 @@ public class OwnedContract extends Contract {
         Constructor constructor = new Constructor(name,
                 Visibility.PUBLIC,
                 List.of(),
-                List.of(new Statement(ownerAttribute.assignment(new Value("msg.sender"))))
+                List.of(ownerAttribute.assignment(new Value("msg.sender")))
         );
         this.setConstructor(constructor);
 

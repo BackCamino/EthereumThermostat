@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Struct extends Type implements SolidityComponent {
+public class Struct extends Type implements SolidityComponent, Declarable {
     private Collection<Variable> fields;
 
     public Struct(String type) {
@@ -28,11 +28,17 @@ public class Struct extends Type implements SolidityComponent {
         return this.fields.remove(field);
     }
 
+    @Override
     public String declaration() {
         StringBuilder toPrint = new StringBuilder("struct " + this.print() + " {\n");
-        this.fields.forEach(el -> toPrint.append(el.printWithIndentation(1) + ",\n"));
+        this.fields.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
         toPrint.append("}");
 
         return toPrint.toString();
+    }
+
+    @Override
+    public String getName() {
+        return this.print();
     }
 }

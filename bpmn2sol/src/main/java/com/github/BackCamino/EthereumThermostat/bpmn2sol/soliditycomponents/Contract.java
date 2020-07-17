@@ -6,25 +6,27 @@ public class Contract implements Extendable {
     private String name;
     private Constructor constructor;
     private Map<Extendable, List<Value>> extendeds;
-    private Collection<Variable> attributes;
-    private Collection<Function> functions;
-    private Collection<Modifier> modifiers;
-    private Collection<Event> events;
+    private Set<Variable> attributes;
+    private Set<Function> functions;
+    private Set<Modifier> modifiers;
+    private Set<Event> events;
+    private Set<Declarable> declarations;
     private boolean isAbstract;
 
     public Contract(String name, Constructor constructor, Collection<Variable> attributes,
-                    Collection<Function> functions, Collection<Modifier> modifiers, Collection<Event> events) {
+                    Collection<Function> functions, Collection<Modifier> modifiers, Collection<Event> events, Collection<Declarable> declarations) {
         this.name = name;
         this.constructor = constructor;
         this.attributes = new HashSet<>(attributes);
         this.functions = new HashSet<>(functions);
         this.modifiers = new HashSet<>(modifiers);
         this.events = new HashSet<>(events);
+        this.declarations = new HashSet<>(declarations);
         this.extendeds = new HashMap<>();
     }
 
     public Contract(String name) {
-        this(name, null, Set.of(), Set.of(), Set.of(), Set.of());
+        this(name, null, Set.of(), Set.of(), Set.of(), Set.of(), Set.of());
     }
 
     public void addAttribute(Variable attribute) {
@@ -41,6 +43,10 @@ public class Contract implements Extendable {
 
     public void addEvent(Event event) {
         events.add(event);
+    }
+
+    public void addDeclaration(Declarable declaration) {
+        declarations.add(declaration);
     }
 
     public void addExtended(Extendable toExtend, Value... variables) {
@@ -87,6 +93,14 @@ public class Contract implements Extendable {
         return events;
     }
 
+    public Collection<Declarable> getDeclarations() {
+        return this.declarations;
+    }
+
+    public Collection<Variable> getAttributes() {
+        return attributes;
+    }
+
     public String print() {
         StringBuilder toPrint = new StringBuilder();
         toPrint.append("contract " + this.name);
@@ -96,6 +110,7 @@ public class Contract implements Extendable {
             toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
         }
         toPrint.append(" {\n");
+        this.declarations.forEach(el -> toPrint.append(el.declarationWithIndentation(1) + "\n\n"));
         this.attributes.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
         if (!this.attributes.isEmpty()) toPrint.append("\n");
         this.events.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));

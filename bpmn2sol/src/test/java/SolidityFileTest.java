@@ -16,11 +16,11 @@ class SolidityFileTest {
     @Test
     void complexFileTest() {
         SolidityFile sf = new SolidityFile();
-        Contract c = new Contract("Contratto");
-        c.addAttribute(new Variable("variabile1", new Type(Type.BaseTypes.INT)));
-        c.addAttribute(new Variable("v2", new Type("tipo1")));
-        c.addEvent(new Event("evento1"));
-        c.addEvent(new Event("evento2", List.of(new Variable("eeee", new Type("ttt")))));
+        Contract c = new Contract("Contract");
+        c.addAttribute(new Variable("variable1", new Type(Type.BaseTypes.INT)));
+        c.addAttribute(new Variable("v2", new Type("type1")));
+        c.addEvent(new Event("event1"));
+        c.addEvent(new Event("event2", List.of(new Variable("vName", new Type("tName")))));
         c.addExtended(new Contract("Co2"));
         c.addFunction(new Function("f1"));
         Function f2 = new Function("f2");
