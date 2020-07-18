@@ -167,6 +167,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      */
     private void parseSourceMessage(Contract contract, Message message, Participant target) {
         //TODO
+        //parse extern attributes
+        VariablesParser.parseExtVariables(VariablesParser.variables(message)).stream()
+                .forEach(contract::addAttribute);
     }
 
     /**
@@ -184,8 +187,6 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         } else {
             parameters.forEach(contract::addAttribute);
         }
-
-        //TODO parse extern attributes
 
         //add setter functions
         /*
