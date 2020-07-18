@@ -19,21 +19,41 @@ public class FunctionParser {
     }
 
     public static Function parametrizedFunction(Message message) {
-        Function function = baseFunction(message);
-        List<ValuedVariable> parameters = variables(message);
+        return parametrizedFunction(nameFunction(message), variables(message));
+    }
 
-        parameters.forEach(function::addParameter);
+    public static Function parametrizedFunction(String name, List<ValuedVariable> parameters) {
+        Function function = new Function(name);
+        //add attributes
+        parameters.stream()
+                .map(el -> new ValuedVariable(privateName(el.getName()), el.getType(), el.getValue()))
+                .forEach(function::addParameter);
 
         return function;
     }
 
-    public static Function setterFunction(Message message) {
-        Function function = parametrizedFunction(message);
-        List<ValuedVariable> parameters = variables(message);
 
-        parameters.forEach(el -> function.addStatement(new Statement(el.getName() + " = _" + el.getName())));
+    public static Function setterFunction(Message message) {
+        return setterFunction(nameFunction(message), variables(message));
+    }
+
+    public static Function setterFunction(String name, List<ValuedVariable> parameters) {
+        //TODO consider values already provided
+        Function function = parametrizedFunction(name, parameters);
+        //add assignments
+        parameters.stream()
+                .map(el -> new Statement(publicName(el.getName()) + " = " + privateName(el.getName()) + ";"))
+                .forEach(function::addStatement);
 
         return function;
+    }
+
+    public static String privateName(String name) {
+        return name.startsWith("_") ? name : "_" + name;
+    }
+
+    public static String publicName(String name) {
+        return name.startsWith("_") ? name.substring(1) : name;
     }
 
     public static Function sendFunction(Message message) {

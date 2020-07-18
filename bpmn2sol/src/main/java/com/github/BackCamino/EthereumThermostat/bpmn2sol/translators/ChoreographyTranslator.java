@@ -2,6 +2,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.ContractsSet;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.FunctionParser;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.VariablesParser;
 import com.sun.tools.javac.Main;
@@ -12,6 +13,7 @@ import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.Task;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -166,10 +168,17 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      * @param message
      */
     private void parseSourceMessage(Contract contract, Message message, Participant target) {
+        //parse external attributes
+        Collection<Variable> externals = VariablesParser.parseExtVariables(VariablesParser.variables(message));
+        externals.stream().forEach(contract::addAttribute);     //add attribute in contract for each external
+        //setter function for externals
+        if (externals.size() > 0) {
+            List<ValuedVariable> toBeSet = externals.stream()
+                    .map(el -> new ValuedVariable(el.getName(), el.getType(), null))
+                    .collect(Collectors.toList());
+            contract.addFunction(FunctionParser.setterFunction("set_" + FunctionParser.nameFunction(message), toBeSet));
+        }
         //TODO
-        //parse extern attributes
-        VariablesParser.parseExtVariables(VariablesParser.variables(message)).stream()
-                .forEach(contract::addAttribute);
     }
 
     /**
@@ -193,6 +202,8 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         Function function = FunctionParser.setterFunction(message);
         Collection<Event> events = VariablesParser.events(message);
         contract.addFunction(function);*/
+
+        //TODO
     }
 
     /**

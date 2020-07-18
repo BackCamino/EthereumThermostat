@@ -70,7 +70,7 @@ public class Function extends Operation {
         //parameters
         this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.getParameters().size() > 0)
-            toPrint.setLength(toPrint.length() - 3);
+            toPrint.setLength(toPrint.length() - 2);
         //special modifiers
         toPrint
                 .append(") ")
