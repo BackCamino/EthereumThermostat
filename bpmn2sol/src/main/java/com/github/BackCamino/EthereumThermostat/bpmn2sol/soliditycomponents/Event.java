@@ -12,6 +12,7 @@ public class Event implements SolidityComponent, Invokable {
     public Event(String name, List<Variable> parameters) {
         this.name = name;
         this.parameters = new LinkedList<>(parameters);
+        this.parameters.forEach(el -> el.setName("_" + el.getName()));
     }
 
     public Event(String name) {

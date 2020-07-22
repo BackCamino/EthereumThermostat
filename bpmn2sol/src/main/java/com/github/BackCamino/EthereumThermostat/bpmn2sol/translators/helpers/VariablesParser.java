@@ -28,13 +28,6 @@ public class VariablesParser {
         return variables;
     }
 
-    public static List<Event> events(Message message) {
-        List<Event> events = new LinkedList<>();
-        variables(message).forEach(el -> events.add(new Event(FunctionParser.nameFunction(message), List.of(el))));
-
-        return events;
-    }
-
     public static List<Variable> parseExtVariables(Collection<ValuedVariable> variables) {
         //parses by external value
         //if the value is external, returns all variables (non valued) with the value name and the given variable type

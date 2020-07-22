@@ -9,11 +9,14 @@ import org.camunda.bpm.model.bpmn.instance.MessageFlow;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.Task;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.capitalize;
+import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.decapitalize;
 import static java.util.function.Predicate.not;
 
 public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
@@ -175,7 +178,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     .collect(Collectors.toList());
             Function setterFunction = FunctionParser.setterFunction("set_" + FunctionParser.nameFunction(message), toBeSet);
             Collection<Event> setterEvents = EventParser.parseEvents(toBeSet);
-            setterEvents.forEach(el -> setterFunction.addStatement(new Statement(el.invocation(new Value("_" + el.getName().replaceFirst("Changed","")))))); //adds event emit for every parameter
+            setterEvents.forEach(el -> setterFunction.addStatement(new Statement(el.invocation(new Value("_" + el.getName().replaceFirst("Changed", "")))))); //adds event emit for every parameter
             contract.addFunction(setterFunction);
             setterEvents.forEach(contract::addEvent);
         }
@@ -195,7 +198,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         if (!isExtern(source)) {
             Struct attributesStruct = getIncomingAttributesStruct(contract, source);
             parameters.forEach(attributesStruct::addField);
-            sourceSetter = StringHelper.decapitalize(attributesStruct.getName()) + "[" + source.getName() + "(msg.sender)]";
+            sourceSetter = decapitalize(attributesStruct.getName()) + "[" + source.getName() + "(msg.sender)]";
         } else {
             parameters.forEach(contract::addAttribute);
         }
@@ -205,9 +208,34 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         contract.addFunction(function);
 
         //add events TODO
-        Collection<Event> events = VariablesParser.events(message);
+        Collection<Event> events = EventParser.parseEvents(message);
+        if (isMultiInstance(source))
+            events.forEach(el -> el.addParameter(new Variable("_" + decapitalize(source.getName()), new Type(capitalize(source.getName())))));
+        events.forEach(contract::addEvent);
+
+        events.forEach(el -> function.addStatement(new Statement(el.invocation(eventChangedAttributes(el, source)))));
 
         //TODO
+    }
+
+    private Value[] eventChangedAttributes(Event event, Participant source) {
+        List<Value> values = new ArrayList<>();
+        values.add(new Value("_" + event.getName().replaceFirst("Changed", "")));
+        if (source != null && isMultiInstance(source))
+            values.add(new Value(source.getName() + "(msg.sender)"));
+
+        return values.toArray(new Value[0]);
+    }
+
+    /**
+     * Determines whether a participant is multi-instance or not
+     *
+     * @param participant
+     * @return
+     */
+    private boolean isMultiInstance(Participant participant) {
+        if (participant.getParticipantMultiplicity() == null) return false;
+        return participant.getParticipantMultiplicity().getMaximum() > 1;
     }
 
     /**
@@ -219,7 +247,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      */
     private Struct getIncomingAttributesStruct(Contract contract, Participant source) {
         String structTypeName = StringHelper.joinCamelCase(source.getName(), "Values");
-        String mappingInstanceName = StringHelper.decapitalize(structTypeName);
+        String mappingInstanceName = decapitalize(structTypeName);
 
         Struct structDeclaration = (Struct) contract.getDeclarations().stream()
                 .filter(el -> el.getName().equals(structTypeName))
