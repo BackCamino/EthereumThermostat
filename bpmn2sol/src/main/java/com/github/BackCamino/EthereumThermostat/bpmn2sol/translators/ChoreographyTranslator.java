@@ -1,10 +1,7 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.ContractsSet;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.FunctionParser;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.VariablesParser;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.*;
 import com.sun.tools.javac.Main;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Message;
@@ -176,9 +173,13 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             List<ValuedVariable> toBeSet = externals.stream()
                     .map(el -> new ValuedVariable(el.getName(), el.getType(), null))
                     .collect(Collectors.toList());
-            contract.addFunction(FunctionParser.setterFunction("set_" + FunctionParser.nameFunction(message), toBeSet));
+            Function setterFunction = FunctionParser.setterFunction("set_" + FunctionParser.nameFunction(message), toBeSet);
+            Collection<Event> setterEvents = EventParser.parseEvents(toBeSet);
+            setterEvents.forEach(el -> setterFunction.addStatement(new Statement(el.invocation(new Value("_" + el.getName().replaceFirst("Changed","")))))); //adds event emit for every parameter
+            contract.addFunction(setterFunction);
+            setterEvents.forEach(contract::addEvent);
         }
-        //TODO
+        //TODO add events
     }
 
     /**
@@ -190,18 +191,21 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     private void parseTargetMessage(Contract contract, Message message, Participant source) {
         //add attributes
         Collection<? extends Variable> parameters = VariablesParser.variables(message);
+        String sourceSetter = null;
         if (!isExtern(source)) {
             Struct attributesStruct = getIncomingAttributesStruct(contract, source);
             parameters.forEach(attributesStruct::addField);
+            sourceSetter = StringHelper.decapitalize(attributesStruct.getName()) + "[" + source.getName() + "(msg.sender)]";
         } else {
             parameters.forEach(contract::addAttribute);
         }
 
-        //add setter functions
-        /*
-        Function function = FunctionParser.setterFunction(message);
+        //add setter function
+        Function function = FunctionParser.setterFunction(message, sourceSetter);
+        contract.addFunction(function);
+
+        //add events TODO
         Collection<Event> events = VariablesParser.events(message);
-        contract.addFunction(function);*/
 
         //TODO
     }

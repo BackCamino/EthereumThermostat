@@ -39,7 +39,7 @@ public class Event implements SolidityComponent, Invokable {
         StringBuilder toPrint = new StringBuilder("event " + this.name + "(");
         this.parameters.forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.parameters.size() > 0)
-            toPrint.setLength(toPrint.length() - 3);
+            toPrint.setLength(toPrint.length() - 2);
         toPrint.append(");");
 
         return toPrint.toString();
@@ -50,7 +50,7 @@ public class Event implements SolidityComponent, Invokable {
         StringBuilder toPrint = new StringBuilder("emit " + this.name + "(");
         Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
         if (values.length > 0)
-            toPrint.setLength(toPrint.length() - 3);
+            toPrint.setLength(toPrint.length() - 2);
         toPrint.append(");");
 
         return toPrint.toString();

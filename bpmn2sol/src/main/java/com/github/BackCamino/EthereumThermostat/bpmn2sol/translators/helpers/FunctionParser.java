@@ -37,12 +37,21 @@ public class FunctionParser {
         return setterFunction(nameFunction(message), variables(message));
     }
 
+    public static Function setterFunction(Message message, String source) {
+        return setterFunction(nameFunction(message), variables(message), source);
+    }
+
     public static Function setterFunction(String name, List<ValuedVariable> parameters) {
-        //TODO consider values already provided
+        return setterFunction(name, parameters, null);
+    }
+
+    public static Function setterFunction(String name, List<ValuedVariable> parameters, String source) {
+        //TODO consider hardcoded values provided in the message
+        String sourceName = source == null || source.isEmpty() ? "" : source + ".";
         Function function = parametrizedFunction(name, parameters);
         //add assignments
         parameters.stream()
-                .map(el -> new Statement(publicName(el.getName()) + " = " + privateName(el.getName()) + ";"))
+                .map(el -> new Statement(sourceName + publicName(el.getName()) + " = " + privateName(el.getName()) + ";"))
                 .forEach(function::addStatement);
 
         return function;
