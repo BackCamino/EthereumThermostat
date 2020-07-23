@@ -1,10 +1,10 @@
-import 'package:ethereumthermostat/models/thermostat_model.dart';
+
+import 'package:ethereumthermostat/models/thermostat_controller_model.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttery_dart2/animations.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
 import 'thermostat_controller.dart';
-
 
 class CircleGestureDetector extends StatefulWidget {
 
@@ -21,7 +21,7 @@ class _CircleGestureDetectorState extends State<CircleGestureDetector> {
 
   _onRadialDragStart(PolarCoord coord, BuildContext context) {
     _startDragCoord = coord;
-    _startDragPreCent = Provider.of<ThermostatModel>(context, listen: false).preCent;
+    _startDragPreCent = Provider.of<ThermostatControllerModel>(context, listen: false).preCent;
   }
 
   _onRadialDragUpdate(PolarCoord coord, BuildContext context){
@@ -33,8 +33,8 @@ class _CircleGestureDetectorState extends State<CircleGestureDetector> {
 
       setState(() {
           _currentDragPreCent = dragValue ?? 0.0;
-          Provider.of<ThermostatModel>(context, listen: false).setPrecent(_currentDragPreCent ?? _seekPrecent);
-          Provider.of<ThermostatModel>(context, listen: false).setThreshold(max1);
+          Provider.of<ThermostatControllerModel>(context, listen: false).setPrecent(_currentDragPreCent ?? _seekPrecent);
+          Provider.of<ThermostatControllerModel>(context, listen: false).setThreshold(max1);
       });
     }
   }
@@ -51,7 +51,7 @@ class _CircleGestureDetectorState extends State<CircleGestureDetector> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThermostatModel>(
+    return Consumer<ThermostatControllerModel>(
       builder: (context, thermostat, child) {
         return RadialDragGestureDetector(
           onRadialDragStart: (coord) => _onRadialDragStart(coord, context),

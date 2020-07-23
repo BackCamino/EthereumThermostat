@@ -1,0 +1,86 @@
+[
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "_heat",
+				"type": "bool"
+			}
+		],
+		"name": "heatChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "int256",
+				"name": "_status",
+				"type": "int256"
+			}
+		],
+		"name": "statusChanged",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "_heat",
+				"type": "bool"
+			}
+		],
+		"name": "heat",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "int256",
+				"name": "_status",
+				"type": "int256"
+			}
+		],
+		"name": "set_comunicateHeaterStatus",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "status",
+		"outputs": [
+			{
+				"internalType": "int256",
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract Thermostat",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "thermostatValues",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "heat",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

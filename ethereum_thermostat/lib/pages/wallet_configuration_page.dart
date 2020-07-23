@@ -1,5 +1,5 @@
-
 import 'package:ethereumthermostat/models/app_model.dart';
+import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:ethereumthermostat/widget/custom_button.dart';
 import 'package:ethereumthermostat/widget/custom_text_field.dart';
@@ -67,9 +67,9 @@ class _WalletConfigurationPageState extends State<WalletConfigurationPage> {
 
     if(keyString != '' && keyString.isNotEmpty) {
       final SharedPreferences prefs = await _prefs;
-      prefs.setString('address_key', keyString).then((value) => {
-        Provider.of<AppModel>(context, listen: false).navigatorKey.currentState.pushReplacementNamed('/HomePage')
-      });
+      await prefs.setString('address_key', keyString);
+      Provider.of<WalletModel>(context, listen: false).setAddress();
+      Provider.of<AppModel>(context, listen: false).navigatorKey.currentState.pushReplacementNamed('/HomePage');
     }
   }
 }

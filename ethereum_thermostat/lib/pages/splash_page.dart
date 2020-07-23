@@ -10,15 +10,15 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-
   @override
   void initState() {
     Timer(
         Duration(seconds: 5),
-            () => Navigator.of(context).pushReplacement(MaterialPageRoute(
+        () => Navigator.of(context).pushReplacement(MaterialPageRoute(
             builder: (BuildContext context) => HomePage())));
     super.initState();
   }
+
 
   @override
   Widget build(BuildContext context) {
