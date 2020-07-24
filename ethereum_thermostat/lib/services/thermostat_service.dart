@@ -1,4 +1,5 @@
-import 'file:///C:/Users/Diego/Documents/Solidity/EthereumThermostat/ethereum_thermostat/lib/models/thermostat.dart';
+
+import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:flutter/material.dart';
 
 class ThermostatService with ChangeNotifier {
