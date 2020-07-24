@@ -1,6 +1,7 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.AssociationStruct;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.*;
 import com.sun.tools.javac.Main;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -8,12 +9,15 @@ import org.camunda.bpm.model.bpmn.instance.Message;
 import org.camunda.bpm.model.bpmn.instance.MessageFlow;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 import org.camunda.bpm.model.bpmn.instance.Task;
+import org.camunda.bpm.model.xml.instance.ModelElementInstance;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.capitalize;
 import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.decapitalize;
@@ -102,8 +106,11 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         //TODO split in multiple functions
         //add struct <Participant>Values, array of that struct and mapping to the index
         for (Participant multiInstanceParticipant : multiInstanceParticipantsDealingWith(participant)) {
+            String miParticipantName = multiInstanceParticipant.getName();
             //add struct <Participant>Values
             Struct participantValues = getIncomingAttributesStruct(contract, multiInstanceParticipant);
+            //add participant in struct
+            participantValues.addField(new Variable(decapitalize(miParticipantName), new Type(capitalize(miParticipantName)), Visibility.NONE));
             contract.addDeclaration(participantValues);
 
             //add array of struct <Participant>Values
@@ -138,7 +145,127 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      * @param task
      */
     private void configureAssociations(Task task) {
-        //TODO
+        //prepare configuration string
+        String taskName = task.getName();
+        taskName = taskName.replaceFirst("CONFIGURE ASSOCIATIONS", "");
+        taskName = taskName.replaceAll(" ", "");
+        String[] parts = taskName.split("\\)\\{");
+        parts[0] = parts[0].replace("(", "");
+        parts[1] = parts[1].replace("}", "");
+        String[] participantsNames = parts[0].split(",");
+        String[] associationCouples = parts[1].split(";");
+
+        List<Participant> participants = Stream.of(participantsNames)
+                .map(this::getParticipant)
+                .collect(Collectors.toList());
+
+        //create association struct
+        AssociationStruct associationStruct = new AssociationStruct(participants);
+        associationStruct.addField(new Variable("activations", new Mapping(new Type(Type.BaseTypes.UINT), new Type(Type.BaseTypes.BOOL)), Visibility.NONE));
+
+        //create association struct array
+        Variable associationsArray = new Variable("associations", new Array(associationStruct, associationCouples.length));
+
+        //create associations from given configuration string
+        List<Association> associations = new LinkedList<>();
+        for (String couple : associationCouples) {
+            couple = couple.replace("[", "").replace("]", "");
+            String[] indexes = couple.split(",");
+            Association association = new Association();
+            for (int i = 0; i < indexes.length; i++) {
+                IndexedParticipant indexedParticipant = new IndexedParticipant(participants.get(i), Integer.parseInt(indexes[i]));
+                association.addParticipant(indexedParticipant);
+            }
+            associations.add(association);
+        }
+
+        //create associations assignment statements
+        List<Statement> assignmentStatement = new LinkedList<>();
+        for (int i = 0; i < associations.size(); i++) {
+            StringBuilder statementString = new StringBuilder("associations[" + i + "] = Association(");
+            associations.get(i)
+                    .getParticipants().stream()
+                    .map(IndexedParticipant::getIndex)
+                    .map(el -> el + ", ")
+                    .forEach(statementString::append);
+            statementString.setLength(statementString.length() - 2);
+            statementString.append(");");
+            assignmentStatement.add(new Statement(statementString.toString()));
+        }
+
+        //add values to contracts
+        for (Contract contract : this.contracts) {
+            boolean shouldBeConfigured = false;
+            for (Participant p : multiInstanceParticipantsDealingWith(getParticipant(contract.getName()))) {
+                if (participants.contains(p)) {
+                    shouldBeConfigured = true;
+                    break;
+                }
+            }
+            if (!shouldBeConfigured)
+                continue;
+
+            //add statements to constructor
+            Constructor constructor = contract.getConstructor();
+            if (constructor == null)
+                constructor = new Constructor(contract.getName());
+            assignmentStatement.forEach(constructor::addStatement);
+            contract.setConstructor(constructor);
+
+            //add association struct
+            contract.addDeclaration(associationStruct);
+
+            //add association struct array
+            contract.addAttribute(associationsArray);
+
+            //TODO add association index in <Participant>Values
+            //TODO
+        }
+    }
+
+    private Participant getParticipant(String name) {
+        return this.getModel().getModelElementsByType(Participant.class).stream()
+                .filter(el -> el.getName().equals(name))
+                .findAny()
+                .orElse(null);
+    }
+
+    private class IndexedParticipant {
+        private Participant participant;
+        private int index;
+
+        public IndexedParticipant(Participant participant, int index) {
+            this.participant = participant;
+            this.index = index;
+        }
+
+        public Participant getParticipant() {
+            return participant;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+    }
+
+    private class Association {
+        private List<IndexedParticipant> participants;
+
+        public Association() {
+            this(List.of());
+        }
+
+        public Association(List<IndexedParticipant> participants) {
+            this.participants = new LinkedList<>(participants);
+        }
+
+        public List<IndexedParticipant> getParticipants() {
+            return participants;
+        }
+
+        public void addParticipant(IndexedParticipant participant) {
+            this.participants.add(participant);
+        }
     }
 
     /**
@@ -149,8 +276,17 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     private Collection<Task> getConfigurationTasks() {
         return this.getModel().getModelElementsByType(Task.class)
                 .stream()
-                .filter(el -> el.getName().startsWith("CONFIGURE"))
+                .filter(this::isConfigurationTask)
                 .collect(Collectors.toSet());
+    }
+
+    private boolean isConfigurationTask(ModelElementInstance modelElementInstance) {
+        if (!(modelElementInstance instanceof Task))
+            return false;
+        Task task = (Task) modelElementInstance;
+        if (task.getName().startsWith("CONFIGURE"))
+            return true;
+        return false;
     }
 
     /**

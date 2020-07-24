@@ -115,6 +115,7 @@ public class Contract implements Extendable {
         if (!this.attributes.isEmpty()) toPrint.append("\n");
         this.events.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));
         if (!this.events.isEmpty()) toPrint.append("\n");
+        if (this.constructor != null) toPrint.append(this.constructor.printWithIndentation(1) + "\n\n");
         this.modifiers.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n\n"));
         if (!this.modifiers.isEmpty()) toPrint.append("\n");
         this.functions.forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n\n"));

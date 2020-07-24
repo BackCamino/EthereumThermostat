@@ -10,6 +10,9 @@
   <bpmn2:message id="Message_1ksm8jv" name="setThreshold(int threshold)" />
   <bpmn2:message id="Message_0x8b6aw" name="communicateTemp(uint actualTemp = EXT_temp) #SensorId" />
   <bpmn2:message id="Message_0guv0gv" name="initialize(int threshold)" />
+  <bpmn2:process id="Process_197wc8l" isExecutable="false">
+    <bpmn2:task id="Activity_0n3y8nv" name="CONFIGURE ASSOCIATIONS (Sensor, Heater) {[0,0];[1,1]}" />
+  </bpmn2:process>
   <bpmn2:choreography id="Choreography">
     <bpmn2:participant id="Participant_1x6c2sa" name="Heater">
       <bpmn2:participantMultiplicity maximum="2" />

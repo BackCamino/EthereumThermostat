@@ -1,9 +1,9 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
 public enum Visibility implements SolidityComponent {
-    PUBLIC, PRIVATE, EXTERNAL;
+    NONE, PUBLIC, PRIVATE, EXTERNAL, INTERNAL;
 
     public String print() {
-        return this.name().toLowerCase();
+        return this.equals(Visibility.NONE) ? "" : this.name().toLowerCase();
     }
 }
