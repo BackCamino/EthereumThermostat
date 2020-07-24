@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'package:ethereumthermostat/models/app_model.dart';
-import 'package:ethereumthermostat/models/bottom_nav_model.dart';
+import 'package:ethereumthermostat/models/config.dart';
+import 'package:ethereumthermostat/models/thermostat.dart';
+import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/pages/home_page.dart';
 import 'package:ethereumthermostat/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart';
 import 'package:provider/provider.dart';
-import 'models/thermostat_model.dart';
+import 'package:web3dart/web3dart.dart';
 
 class EthereumThermostatApp extends StatefulWidget {
   @override
@@ -15,6 +18,8 @@ class EthereumThermostatApp extends StatefulWidget {
 
 class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
   static final _navigatorKey = GlobalKey<NavigatorState>();
+
+  final web3Client = Web3Client(Config.nodeAddress, Client());
 
   @override
   void initState() {
@@ -37,11 +42,11 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
         ChangeNotifierProvider<AppModel>(
           create: (_) => AppModel(navigatorKey: _navigatorKey),
         ),
-        ChangeNotifierProvider<ThermostatModel>(
-          create: (_) => ThermostatModel(currentThreshold: 20, preCent: 0.32),
+        ChangeNotifierProvider<WalletModel>(
+          create: (_) => WalletModel(web3Client, _navigatorKey),
         ),
-        ChangeNotifierProvider<BottomNavModel>(
-          create: (_) => BottomNavModel(currentTabIndex: 0),
+        ChangeNotifierProvider<ThermostatContract>(
+          create: (_) => ThermostatContract(web3Client),
         )
       ],
       child: MaterialApp(

@@ -1,4 +1,5 @@
-import 'package:ethereumthermostat/models/thermostat_model.dart';
+
+import 'package:ethereumthermostat/models/thermostat_controller_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:provider/provider.dart';
@@ -9,7 +10,7 @@ class ThermostatController extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
-    return Consumer<ThermostatModel>(
+    return Consumer<ThermostatControllerModel>(
       builder: (context, thermostat, child) {
         return Transform(
           transform: Matrix4.rotationZ(2 * pi * thermostat.preCent),

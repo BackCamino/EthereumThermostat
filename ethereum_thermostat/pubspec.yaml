@@ -29,6 +29,7 @@ dependencies:
   web3dart: ^1.2.3
   shared_preferences: ^0.5.7+3
   http: ^0.12.1
+  local_auth: ^0.6.2+3
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +49,9 @@ flutter:
    - assets/abi/
    - assets/images/adjust.png
    - assets/images/thermometer.png
+   - assets/images/ethereum.png
+   - assets/images/address.png
+   - assets/images/sensor.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

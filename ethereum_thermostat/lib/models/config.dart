@@ -1,4 +1,4 @@
 class Config {
   static String get nodeAddress =>
-      'https://rinkeby.infura.io/v3/2fd29e9727b04f57a7c20926b2047d5d';
+      'https://rinkeby.infura.io/v3/bffbf6c2890e43358c8fa18187789fdb';
 }

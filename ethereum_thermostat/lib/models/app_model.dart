@@ -5,5 +5,4 @@ class AppModel with ChangeNotifier {
 
   AppModel({this.navigatorKey});
 
-
 }

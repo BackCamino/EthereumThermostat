@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ThermostatModel with ChangeNotifier {
+class ThermostatControllerModel with ChangeNotifier {
   String title;
   double currentTemp;
   double preCent;
@@ -8,7 +8,7 @@ class ThermostatModel with ChangeNotifier {
   bool isOn;
   bool isConfigured;
 
-  ThermostatModel({
+  ThermostatControllerModel({
     this.currentThreshold,
     this.isOn,
     this.title,
