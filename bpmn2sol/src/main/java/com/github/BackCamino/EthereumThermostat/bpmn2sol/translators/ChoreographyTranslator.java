@@ -45,6 +45,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     @Override
     public SolidityFile translate() {
         initializeContracts();
+        initializeCommunicatingContractsAttributes();
         initializeConfigurations();
         parseMessages();
 
@@ -72,6 +73,49 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .stream()
                 .filter(not(this::isExtern))
                 .forEach(contracts::add);
+    }
+
+    /**
+     * For every contract, adds the attributes representing the participants it deals with
+     */
+    private void initializeCommunicatingContractsAttributes() {
+        this.getModel().getModelElementsByType(Participant.class)
+                .stream()
+                .filter(not(this::isExtern))
+                .forEach(this::initializeCommunicatingContractsAttributes);
+    }
+
+    /**
+     * Adds the attributes representing the participants the given contract deals with
+     *
+     * @param participant
+     */
+    private void initializeCommunicatingContractsAttributes(Participant participant) {
+        Contract contract = this.contracts.getContract(participant);
+
+        //add external participants attributes
+        externalParticipantsDealingWith(participant).stream()
+                .distinct()
+                .map(el -> new Variable(decapitalize(VariablesParser.parseExtName(el.getName())), new Type(Type.BaseTypes.ADDRESS)))
+                .forEach(contract::addAttribute);
+
+        //TODO split in multiple functions
+        //add struct <Participant>Values, array of that struct and mapping to the index
+        for (Participant multiInstanceParticipant : multiInstanceParticipantsDealingWith(participant)) {
+            //add struct <Participant>Values
+            Struct participantValues = getIncomingAttributesStruct(contract, multiInstanceParticipant);
+            contract.addDeclaration(participantValues);
+
+            //add array of struct <Participant>Values
+            int maxMultiplicity = multiInstanceParticipant.getParticipantMultiplicity().getMaximum();
+            Variable arrayOfStruct = new Variable(decapitalize(participantValues.getName()), new Type(participantValues.getName() + "[" + maxMultiplicity + "]")); //TODO add array type
+            contract.addAttribute(arrayOfStruct);
+
+            //add mapping from <Participant> to uint which is the index in arrayOfStruct
+            Mapping mappingDeclaration = new Mapping(new Type(multiInstanceParticipant.getName()), new Type(Type.BaseTypes.UINT));
+            Variable mappingInstantiation = new Variable(decapitalize(multiInstanceParticipant.getName() + "Index"), mappingDeclaration);
+            contract.addAttribute(mappingInstantiation);
+        }
     }
 
     /**
@@ -182,7 +226,6 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             contract.addFunction(setterFunction);
             setterEvents.forEach(contract::addEvent);
         }
-        //TODO add events
     }
 
     /**
@@ -195,7 +238,8 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         //add attributes
         Collection<? extends Variable> parameters = VariablesParser.variables(message);
         String sourceSetter = null;
-        if (!isExtern(source)) {
+        if (!isExtern(source) && isMultiInstance(source)) {
+            //creates struct <Participant>Values
             Struct attributesStruct = getIncomingAttributesStruct(contract, source);
             parameters.forEach(attributesStruct::addField);
             sourceSetter = decapitalize(attributesStruct.getName()) + "[" + source.getName() + "(msg.sender)]";
@@ -239,25 +283,104 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     }
 
     /**
-     * Retrieves the struct of the incoming messages from a source contract and creates it if doesn't exist yet
+     * Retrieves the struct of the incoming messages from a source contract and creates it if doesn't exist yet but doesn't add it to the contract
      *
      * @param contract
      * @param source
      * @return
      */
     private Struct getIncomingAttributesStruct(Contract contract, Participant source) {
-        String structTypeName = StringHelper.joinCamelCase(source.getName(), "Values");
-        String mappingInstanceName = decapitalize(structTypeName);
+        return getIncomingAttributesStruct(contract, source.getName());
+    }
 
-        Struct structDeclaration = (Struct) contract.getDeclarations().stream()
+    /**
+     * Retrieves the struct of the incoming messages from a source contract and creates it if doesn't exist yet but doesn't add it to the contract
+     *
+     * @param contract
+     * @param source
+     * @return
+     */
+    private Struct getIncomingAttributesStruct(Contract contract, Contract source) {
+        return getIncomingAttributesStruct(contract, source.getName());
+    }
+
+    /**
+     * Retrieves the struct of the incoming messages from a source contract and creates it if doesn't exist yet but doesn't add it to the contract
+     *
+     * @param contract
+     * @param source
+     * @return
+     */
+    private Struct getIncomingAttributesStruct(Contract contract, String source) {
+        String structTypeName = StringHelper.joinCamelCase(source, "Values");
+
+        return (Struct) contract.getDeclarations().stream()
                 .filter(el -> el.getName().equals(structTypeName))
                 .findAny()
                 .orElse(new Struct(structTypeName));
+    }
 
-        contract.addDeclaration(structDeclaration);
-        Mapping sourceValuesMapping = new Mapping(new Type(source.getName()), structDeclaration);
-        contract.addAttribute(new Variable(mappingInstanceName, sourceValuesMapping));
+    /**
+     * Finds all the participants dealing with (sending to or receiving from) the given participant
+     *
+     * @param participant
+     * @return
+     */
+    private Collection<Participant> participantsDealingWith(Participant participant) {
+        return this.getModel().getModelElementsByType(MessageFlow.class).stream()
+                .filter(el -> targetParticipant(el).equals(participant) || sourceParticipant(el).equals(participant))
+                .map(el -> sourceParticipant(el).equals(participant) ? targetParticipant(el) : sourceParticipant(el))
+                .collect(Collectors.toSet());
+    }
 
-        return structDeclaration;
+    /**
+     * Finds all the external participants dealing with the given participant
+     *
+     * @param participant
+     * @return
+     */
+    private Collection<Participant> externalParticipantsDealingWith(Participant participant) {
+        return participantsDealingWith(participant).stream()
+                .filter(this::isExtern)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Finds all the multi-instance contracts dealing with the given participant
+     *
+     * @param participant
+     * @return
+     */
+    private Collection<Contract> multiInstanceContractsDealingWith(Participant participant) {
+        return participantsDealingWith(participant).stream()
+                .filter(this::isMultiInstance)
+                .filter(this.contracts::contains)
+                .map(this.contracts::getContract)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Finds all the multi-instance participants dealing with the given participant
+     *
+     * @param participant
+     * @return
+     */
+    private Collection<Participant> multiInstanceParticipantsDealingWith(Participant participant) {
+        return participantsDealingWith(participant).stream()
+                .filter(this::isMultiInstance)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Finds all the single-instance contracts dealing with the given participant
+     *
+     * @param participant
+     * @return
+     */
+    private Collection<Contract> singleInstanceContractsDealingWith(Participant participant) {
+        return participantsDealingWith(participant).stream()
+                .filter(not(this::isMultiInstance))
+                .map(this.contracts::getContract)
+                .collect(Collectors.toSet());
     }
 }
