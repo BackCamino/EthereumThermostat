@@ -20,6 +20,10 @@ public class Struct extends Type implements SolidityComponent, Declarable, Invok
         if (!this.fields.contains(field)) this.fields.add(field);
     }
 
+    public void addField(Variable field, int index) {
+        if (!this.fields.contains(field)) this.fields.add(index, field);
+    }
+
     public List<Variable> getFields() {
         return this.fields;
     }

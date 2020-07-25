@@ -110,7 +110,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //add struct <Participant>Values
             Struct participantValues = getIncomingAttributesStruct(contract, multiInstanceParticipant);
             //add participant in struct
-            participantValues.addField(new Variable(decapitalize(miParticipantName), new Type(capitalize(miParticipantName)), Visibility.NONE));
+            participantValues.addField(new Variable(decapitalize(miParticipantName), new Type(capitalize(miParticipantName)), Visibility.NONE), 0);
+            //add association struct array index
+            participantValues.addField(new Variable("associationIndex", new Type(Type.BaseTypes.UINT), Visibility.NONE), 1);
             contract.addDeclaration(participantValues);
 
             //add array of struct <Participant>Values
@@ -180,8 +182,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         }
 
         //create associations assignment statements
-        List<Statement> assignmentStatement = new LinkedList<>();
+        List<Statement> assignmentStatements = new LinkedList<>();
         for (int i = 0; i < associations.size(); i++) {
+            //add assignment in association
             StringBuilder statementString = new StringBuilder("associations[" + i + "] = Association(");
             associations.get(i)
                     .getParticipants().stream()
@@ -190,7 +193,15 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     .forEach(statementString::append);
             statementString.setLength(statementString.length() - 2);
             statementString.append(");");
-            assignmentStatement.add(new Statement(statementString.toString()));
+            assignmentStatements.add(new Statement(statementString.toString()));
+
+            //add assignment in <participant>Values (<participant>Values[<participantIndex>.associationIndex = <associationIndex>;
+            int finalI = i;
+            associations.get(i)
+                    .getParticipants().stream()
+                    .filter(el -> isMultiInstance(el.getParticipant()))
+                    .map(el -> new Statement(decapitalize(el.getParticipant().getName()) + "Values[" + el.getIndex() + "].associationIndex = " + finalI + ";"))
+                    .forEach(assignmentStatements::add);
         }
 
         //add values to contracts
@@ -209,7 +220,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             Constructor constructor = contract.getConstructor();
             if (constructor == null)
                 constructor = new Constructor(contract.getName());
-            assignmentStatement.forEach(constructor::addStatement);
+            assignmentStatements.forEach(constructor::addStatement);
             contract.setConstructor(constructor);
 
             //add association struct
