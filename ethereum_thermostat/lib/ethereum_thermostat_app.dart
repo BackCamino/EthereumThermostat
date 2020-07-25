@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:web3dart/web3dart.dart';
+import 'package:web_socket_channel/io.dart';
 
 class EthereumThermostatApp extends StatefulWidget {
   @override
@@ -20,6 +21,9 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
   static final _navigatorKey = GlobalKey<NavigatorState>();
 
   final web3Client = Web3Client(Config.nodeAddress, Client());
+  final web3Eth = Web3Client(Config.nodeAddress, Client(), socketConnector: () {
+    return IOWebSocketChannel.connect(Config.nodeWwsAddress).cast<String>();
+  });
 
   @override
   void initState() {
@@ -46,7 +50,7 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
           create: (_) => WalletModel(web3Client, _navigatorKey),
         ),
         ChangeNotifierProvider<ThermostatContract>(
-          create: (_) => ThermostatContract(web3Client),
+          create: (_) => ThermostatContract(web3Eth),
         )
       ],
       child: MaterialApp(

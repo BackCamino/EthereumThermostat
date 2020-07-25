@@ -6,7 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:web3dart/web3dart.dart';
 
 class ThermostatContract with ChangeNotifier {
-  static const THERMOSTAT_ABI_ASSET = 'assets/abi/thermostat_abi.json';
+  //static const THERMOSTAT_ABI_ASSET = 'assets/abi/thermostat_abi.json';
+  static const THERMOSTAT_ABI_ASSET = 'assets/abi/prova.json';
 
   bool _initialized;
 
@@ -20,6 +21,8 @@ class ThermostatContract with ChangeNotifier {
   ContractFunction _setThreshold;
   ContractFunction _initialize;
   ContractFunction _setValue;
+  ContractEvent _setValueEvent;
+  StreamSubscription<FilterEvent> _setValueEventSubscription;
   ContractEvent _actualStatusChangedEvent;
   ContractEvent _actualTempChangedEvent;
   ContractEvent _distruptChangedEvent;
@@ -89,9 +92,10 @@ class ThermostatContract with ChangeNotifier {
 
   void setAddress() async {
 
-    setHexAddress = '0x50331B35cD64C79d00482668a07d7caCe98eF74f';
-    setCredentials = await _web3client.credentialsFromPrivateKey(_hexAddress);
-    setEthAddress = await _credentials.extractAddress();
+    //setHexAddress = '0x50331B35cD64C79d00482668a07d7caCe98eF74f';
+    setHexAddress = '0xd3400539e83185e46EED3CD4d29E72420c89f8b1';
+    //setCredentials = await _web3client.credentialsFromPrivateKey(_hexAddress);
+    setEthAddress = EthereumAddress.fromHex('0xd3400539e83185e46EED3CD4d29E72420c89f8b1');//await _credentials.extractAddress();
 
     notifyListeners();
     deployContract();
@@ -100,12 +104,46 @@ class ThermostatContract with ChangeNotifier {
   void deployContract() async {
     final jsonData = await rootBundle.loadString(THERMOSTAT_ABI_ASSET);
     _contract = DeployedContract(
-      ContractAbi.fromJson(jsonData, 'Thermostat'),
+      ContractAbi.fromJson(jsonData, 'Prova'),
       _ethAddress,
     );
 
     notifyListeners();
-    initContractElements();
+    //initContractElements();
+    initProva();
+  }
+
+  void initProva() {
+
+    sensors = List();
+    sensors.addAll([
+      SensorModel(1),
+      SensorModel(2),
+      SensorModel(3)
+    ]);
+    heaters = List();
+    heaters.addAll([
+      HeaterModel(1),
+      HeaterModel(2),
+      HeaterModel(3),
+    ]);
+    sensors[0].setHeaterAssociate = 0;
+    sensors[1].setHeaterAssociate = 1;
+    sensors[2].setHeaterAssociate = 2;
+    heaters[0].setHeaterStatus = 0;
+    heaters[1].setHeaterStatus = 1;
+    heaters[2].setHeaterStatus = 1;
+
+    _setValue = contract.function('setValue');
+    _setValueEvent = _contract.event('valueChanged');
+    _setValueEventSubscription?.cancel();
+    _setValueEventSubscription = _web3client.events(FilterOptions.events(contract: _contract, event: _setValueEvent)).listen((event) {
+      final decoded = _setValueEvent.decodeResults(event.topics, event.data);
+      for(dynamic value in decoded) {
+        print(value);
+      }
+    });
+    _initialized = true;
   }
 
   void initContractElements() {
@@ -240,12 +278,13 @@ class ThermostatContract with ChangeNotifier {
         creds, Transaction.callContract(
         contract: _contract,
         function: _setValue,
-        parameters: [value],
+        parameters: [BigInt.from(5)],
         from: await creds.extractAddress()
     ), fetchChainIdFromNetworkId: true);
-    print(result1);
+    print('Trans : ' + result1);
     return result1;
   }
+
 
   Future<String> distruptFun(BoolType distrupt) async {
     setDistrupt = distrupt as bool;
