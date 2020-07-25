@@ -103,6 +103,12 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .map(el -> new Variable(decapitalize(VariablesParser.parseExtName(el.getName())), new Type(Type.BaseTypes.ADDRESS)))
                 .forEach(contract::addAttribute);
 
+        //add single instance contracts attributes
+        singleInstanceContractsDealingWith(participant).stream()
+                .distinct()
+                .map(el -> new Variable(decapitalize(el.getName()), new Type(capitalize(el.getName()))))
+                .forEach(contract::addAttribute);
+
         //TODO split in multiple functions
         //add struct <Participant>Values, array of that struct and mapping to the index
         for (Participant multiInstanceParticipant : multiInstanceParticipantsDealingWith(participant)) {
@@ -202,7 +208,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     .filter(el -> isMultiInstance(el.getParticipant()))
                     .map(el -> new Statement(decapitalize(el.getParticipant().getName()) + "Values[" + el.getIndex() + "].associationIndex = " + finalI + ";"))
                     .forEach(assignmentStatements::add);
+            assignmentStatements.add(new Statement(""));
         }
+        assignmentStatements.remove(assignmentStatements.size() - 1);
 
         //add values to contracts
         for (Contract contract : this.contracts) {
@@ -526,6 +534,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      */
     private Collection<Contract> singleInstanceContractsDealingWith(Participant participant) {
         return participantsDealingWith(participant).stream()
+                .filter(not(this::isExtern))
                 .filter(not(this::isMultiInstance))
                 .map(this.contracts::getContract)
                 .collect(Collectors.toSet());
