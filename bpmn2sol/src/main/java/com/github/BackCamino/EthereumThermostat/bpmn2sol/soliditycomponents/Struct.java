@@ -1,26 +1,26 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Stream;
 
-public class Struct extends Type implements SolidityComponent, Declarable {
-    private Collection<Variable> fields;
+public class Struct extends Type implements SolidityComponent, Declarable, Invokable {
+    private List<Variable> fields;
 
     public Struct(String type) {
-        this(type, Set.of());
+        this(type, List.of());
     }
 
-    public Struct(String type, Collection<Variable> fields) {
+    public Struct(String type, List<Variable> fields) {
         super(type);
-        this.fields = new HashSet<>(fields);
+        this.fields = new LinkedList<>(fields);
     }
 
     public void addField(Variable field) {
-        this.fields.add(field);
+        if (!this.fields.contains(field)) this.fields.add(field);
     }
 
-    public Collection<Variable> getFields() {
+    public List<Variable> getFields() {
         return this.fields;
     }
 
@@ -40,5 +40,19 @@ public class Struct extends Type implements SolidityComponent, Declarable {
     @Override
     public String getName() {
         return this.print();
+    }
+
+    @Override
+    public String invocation(Value... values) {
+        StringBuilder toPrint = new StringBuilder(this.getName() + "(");
+        Stream.of(values)
+                .map(Value::print)
+                .map(el -> el + ", ")
+                .forEach(toPrint::append);
+        if (values.length > 0)
+            toPrint.setLength(toPrint.length() - 2);
+        toPrint.append(")");
+
+        return toPrint.toString();
     }
 }
