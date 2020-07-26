@@ -81,7 +81,8 @@ public class Function extends Operation {
         if (this.returned.size() > 0) {
             toPrint.append("returns(");
             returned.forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1).append(") ");
+            toPrint.setLength(toPrint.length() - 2);
+            toPrint.append(") ");
         }
         //modifiers
         this.modifiers.entrySet()

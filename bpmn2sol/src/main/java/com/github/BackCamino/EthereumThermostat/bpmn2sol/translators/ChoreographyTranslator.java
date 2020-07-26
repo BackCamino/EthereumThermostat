@@ -50,6 +50,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     public SolidityFile translate() {
         initializeContracts();
         initializeCommunicatingContractsAttributes();
+        addIsReadyFunction();
         initializeConfigurations();
         parseMessages();
 
@@ -87,6 +88,56 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .stream()
                 .filter(not(this::isExtern))
                 .forEach(this::initializeCommunicatingContractsAttributes);
+    }
+
+    /**
+     * Adds isReady function to every contract
+     */
+    private void addIsReadyFunction() {
+        this.contracts.forEach(this::addIsReadyFunction);
+    }
+
+    /**
+     * Adds isReady function to a specific contract
+     *
+     * @param contract
+     */
+    private void addIsReadyFunction(Contract contract) {
+        Function function = new Function("isReady");
+        function.addReturned(new Variable("_isReady", new Type(Type.BaseTypes.BOOL)));
+
+        //check single instance contracts
+        singleInstanceContractsDealingWith(contract).stream()
+                .map(el -> new IfThenElse(isReadyCondition(el), List.of(new Statement("return false;"))))
+                .forEach(function::addStatement);
+
+        //check multiple instance contracts
+        multiInstanceParticipantsDealingWith(getParticipant(contract.getName())).stream()
+                .filter(this::isContract)
+                .map(el -> new For(
+                        new ValuedVariable("i", new Type(Type.BaseTypes.UINT), new Value(new Type(Type.BaseTypes.UINT), "0"))
+                        , new Condition("i < " + el.getParticipantMultiplicity().getMaximum())
+                        , new Statement("i++")
+                        , List.of(new IfThenElse(isReadyCondition(decapitalize(el.getName()) + "Values[i]." + decapitalize(el.getName())), List.of(new Statement("return false;"))))
+                ))
+                .forEach(function::addStatement);
+
+        function.addStatement(new Statement("return true;"));
+        contract.addFunction(function);
+    }
+
+    private Condition isReadyCondition(Contract contract) {
+        return this.isReadyCondition(contract.getName());
+    }
+
+    private Condition isReadyCondition(String contractVariableName) {
+        String variableName = decapitalize(contractVariableName);
+        //address(<variableName) == address(0) || !<variableName>.isReady()
+        return new Condition("address(" + variableName + ") == address(0) || !" + variableName + ".isReady()");
+    }
+
+    private boolean isContract(Participant participant) {
+        return !isExtern(participant);
     }
 
     /**
@@ -538,5 +589,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .filter(not(this::isMultiInstance))
                 .map(this.contracts::getContract)
                 .collect(Collectors.toSet());
+    }
+
+    private Collection<Contract> singleInstanceContractsDealingWith(Contract contract) {
+        return singleInstanceContractsDealingWith(getParticipant(contract.getName()));
     }
 }
