@@ -107,7 +107,7 @@ public class Contract implements Extendable {
         if (!this.extendeds.isEmpty()) {
             toPrint.append(" is ");
             this.extendeds.forEach((key, value) -> toPrint.append(key.invocation(value.toArray(new Value[0])) + ", "));
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
+            toPrint.setLength(toPrint.length() - 2);
         }
         toPrint.append(" {\n");
         this.declarations.forEach(el -> toPrint.append(el.declarationWithIndentation(1) + "\n\n"));

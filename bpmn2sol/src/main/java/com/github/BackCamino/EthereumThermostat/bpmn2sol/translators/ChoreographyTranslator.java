@@ -2,6 +2,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.AssociationStruct;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.OwnedContract;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.*;
 import com.sun.tools.javac.Main;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -19,8 +20,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.capitalize;
-import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.decapitalize;
+import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.*;
 import static java.util.function.Predicate.not;
 
 public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
@@ -51,6 +51,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         initializeContracts();
         initializeCommunicatingContractsAttributes();
         addIsReadyFunction();
+        addSetterParticipantFunctions();
         initializeConfigurations();
         parseMessages();
 
@@ -78,6 +79,11 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .stream()
                 .filter(not(this::isExtern))
                 .forEach(contracts::add);
+
+        //all contracts must extend Owned
+        OwnedContract ownedContract = new OwnedContract();
+        contracts.add(ownedContract);
+        this.contracts.forEach(el -> el.addExtended(ownedContract));
     }
 
     /**
@@ -124,6 +130,58 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
         function.addStatement(new Statement("return true;"));
         contract.addFunction(function);
+    }
+
+    /**
+     * Adds setter functions for every participant
+     */
+    private void addSetterParticipantFunctions() {
+        for (Contract contract : this.contracts)
+            for (Participant participant : participantsDealingWith(getParticipant(contract.getName())))
+                addSetterParticipantFunctions(contract, participant);
+    }
+
+    /**
+     * Adds setter function in a contract for a specific participant
+     *
+     * @param contract
+     * @param participant
+     */
+    private void addSetterParticipantFunctions(Contract contract, Participant participant) {
+        Function function = isMultiInstance(participant) ? miSetterParticipantFunction(participant) : siSetterParticipantFunction(participant);
+        function.addModifier(OwnedContract.onlyOwnerModifier());
+        contract.addFunction(function);
+    }
+
+    private Function siSetterParticipantFunction(Participant participant) {
+        String participantName = decapitalize(VariablesParser.parseExtName(participant.getName()));
+        Function function = baseSetterParticipantFunction(participant);
+        function.addStatement(new Statement(participantName + " = _" + participantName + ";"));
+
+        return function;
+    }
+
+    private Function miSetterParticipantFunction(Participant participant) {
+        String participantName = decapitalize(VariablesParser.parseExtName(participant.getName()));
+        Function function = baseSetterParticipantFunction(participant);
+
+        function.addParameter(new Variable("id", new Type(Type.BaseTypes.UINT)));
+
+        Statement indexAssignment = new Statement(participantName + "Index[_" + participantName + "] = _id;");
+        Statement participantValuesAssignment = new Statement(participantName + "Values[_id]." + participantName + " = _" + participantName + ";");
+        function.addStatement(indexAssignment);
+        function.addStatement(participantValuesAssignment);
+
+        return function; //TODO
+    }
+
+    private Function baseSetterParticipantFunction(Participant participant) {
+        String participantName = decapitalize(VariablesParser.parseExtName(participant.getName()));
+        Function function = new Function(decapitalize(joinCamelCase("initialize", participantName, "address")));
+        Type parameterType = isExtern(participant) ? new Type(Type.BaseTypes.ADDRESS) : new Type(capitalize(participant.getName()));
+        function.addParameter(new Variable(participantName, parameterType));
+
+        return function;
     }
 
     private Condition isReadyCondition(Contract contract) {
@@ -448,7 +506,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //creates struct <Participant>Values
             Struct attributesStruct = getIncomingAttributesStruct(contract, source);
             parameters.forEach(attributesStruct::addField);
-            sourceSetter = decapitalize(attributesStruct.getName()) + "[" + source.getName() + "(msg.sender)]";
+            sourceSetter = decapitalize(attributesStruct.getName()) + "[" + decapitalize(source.getName()) + "Index[" + source.getName() + "(msg.sender)]]";
         } else {
             parameters.forEach(contract::addAttribute);
         }

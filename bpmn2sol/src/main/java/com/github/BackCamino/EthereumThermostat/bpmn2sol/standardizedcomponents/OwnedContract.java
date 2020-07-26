@@ -11,21 +11,41 @@ public class OwnedContract extends Contract {
         super(name);
 
         //attributes
-        Variable ownerAttribute = new Variable("owner", new Type(Type.BaseTypes.ADDRESS), Visibility.PRIVATE);
-        this.addAttribute(ownerAttribute);
+        this.addAttribute(ownerAttribute());
 
         //constructor
         Constructor constructor = new Constructor(name,
                 Visibility.PUBLIC,
                 List.of(),
-                List.of(ownerAttribute.assignment(new Value("msg.sender")))
+                List.of(ownerAttribute().assignment(new Value("msg.sender")))
         );
         this.setConstructor(constructor);
 
         //modifiers
-        //only address modifier
+        this.addModifier(onlyAddressModifier());
+        this.addModifier(onlyOwnerModifier());
+
+        //TODO transfer ownership function
+        //TODO getOwner function or make owner attribute public
+        //TODO addressValidator modifier (optional)
+    }
+
+    public static Modifier onlyOwnerModifier() {
+        return new Modifier(
+                "onlyOwner",
+                Visibility.PUBLIC,
+                List.of(),
+                List.of(
+                        new Statement("require(msg.sender == " + ownerAttribute().getName() + ", \"Address not valid\");"),
+                        new Modifier.SpecialUnderscore()
+                ),
+                false
+        );
+    }
+
+    public static Modifier onlyAddressModifier() {
         Variable addressParameter = new Variable("_address", new Type(Type.BaseTypes.ADDRESS), Visibility.PRIVATE);
-        Modifier onlyAddressModifier = new Modifier(
+        return new Modifier(
                 "onlyAddress",
                 Visibility.PUBLIC,
                 List.of(addressParameter),
@@ -35,24 +55,10 @@ public class OwnedContract extends Contract {
                 ),
                 false
         );
-        this.addModifier(onlyAddressModifier);
+    }
 
-        //only owner modifier
-        Modifier onlyOwnerModifier = new Modifier(
-                "onlyOwner",
-                Visibility.PUBLIC,
-                List.of(),
-                List.of(
-                        new Statement("require(msg.sender == " + ownerAttribute.getName() + ", \"Address not valid\");"),
-                        new Modifier.SpecialUnderscore()
-                ),
-                false
-        );
-        this.addModifier(onlyOwnerModifier);
-
-        //TODO transfer ownership function
-        //TODO getOwner function or make owner attribute public
-        //TODO addressValidator modifier (optional)
+    public static Variable ownerAttribute() {
+        return new Variable("owner", new Type(Type.BaseTypes.ADDRESS), Visibility.PRIVATE);
     }
 
     public OwnedContract() {
