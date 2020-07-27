@@ -529,7 +529,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //creates struct <Participant>Values
             Struct attributesStruct = getIncomingAttributesStruct(contract, source);
             parameters.forEach(attributesStruct::addField);
-            sourceSetter = decapitalize(attributesStruct.getName()) + "[" + decapitalize(source.getName()) + "Index[" + source.getName() + "(msg.sender)]]";
+            sourceSetter = "getValues(" + source.getName() + "(msg.sender))";
         } else {
             parameters.forEach(contract::addAttribute);
         }

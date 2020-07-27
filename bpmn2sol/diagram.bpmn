@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xs="http://www.w3.org/2001/XMLSchema" id="_tTv5YOycEeiHGOQ2NkJZNQ" targetNamespace="http://www.signavio.com">
-  <bpmn2:message id="Message_1jxyxtu" name="shutDown(bool shutDown = false)" />
-  <bpmn2:message id="Message_1sbim6g" name="communicateTemp(uint actualTemp = EXT_temp) #?" />
-  <bpmn2:message id="Message_0h8d7h7" name="distrupt(bool distrupt = true)" />
-  <bpmn2:message id="Message_15a838m" name="comunicateHeaterStatus(int actualStatus = EXT_status) #SensorId" />
-  <bpmn2:message id="Message_1yycinj" name="heat(bool heat = false) #SensorId" />
-  <bpmn2:message id="Message_0e4vprj" name="heat(bool heat = true) #SensorId" />
-  <bpmn2:message id="Message_0x7sv2e" name="shutDown(bool shutDown = true)" />
+  <bpmn2:message id="Message_1jxyxtu" name="requestShutDown(bool shutDown = false)" />
+  <bpmn2:message id="Message_1sbim6g" name="communicateTemp(uint actualTemp = EXT_temp)" />
+  <bpmn2:message id="Message_0h8d7h7" name="requestDistrupt(bool distrupt = true)" />
+  <bpmn2:message id="Message_15a838m" name="comunicateHeaterStatus(int actualStatus = EXT_status)" />
+  <bpmn2:message id="Message_1yycinj" name="heatOff(bool heat = false)" />
+  <bpmn2:message id="Message_0e4vprj" name="heatOn(bool heat = true)" />
+  <bpmn2:message id="Message_0x7sv2e" name="requestShutDown(bool shutDown = true)" />
   <bpmn2:message id="Message_1ksm8jv" name="setThreshold(int threshold)" />
-  <bpmn2:message id="Message_0x8b6aw" name="communicateTemp(uint actualTemp = EXT_temp) #SensorId" />
-  <bpmn2:message id="Message_0guv0gv" name="initialize(int threshold)" />
+  <bpmn2:message id="Message_0x8b6aw" name="communicateTemp(uint actualTemp = EXT_temp)" />
+  <bpmn2:message id="Message_0guv0gv" name="initializeThreshold(int threshold)" />
   <bpmn2:process id="Process_197wc8l" isExecutable="false">
     <bpmn2:task id="Activity_0n3y8nv" name="CONFIGURE ASSOCIATIONS (Sensor, Heater) {[0,0];[1,1]}" />
   </bpmn2:process>
