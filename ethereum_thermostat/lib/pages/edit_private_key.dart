@@ -1,21 +1,20 @@
 import 'package:ethereumthermostat/models/app_model.dart';
 import 'package:ethereumthermostat/models/wallet.dart';
+import 'package:ethereumthermostat/utils/prefs_util.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:ethereumthermostat/widget/custom_button.dart';
 import 'package:ethereumthermostat/widget/custom_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class WalletConfigurationPage extends StatefulWidget {
+class EditPrivateKey extends StatefulWidget {
   @override
-  _WalletConfigurationPageState createState() => _WalletConfigurationPageState();
+  _EditPrivateKeyState createState() => _EditPrivateKeyState();
 }
 
-class _WalletConfigurationPageState extends State<WalletConfigurationPage> {
+class _EditPrivateKeyState extends State<EditPrivateKey> {
 
   TextEditingController _keyTextEditingController;
-  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   @override
   void initState() {
@@ -38,7 +37,7 @@ class _WalletConfigurationPageState extends State<WalletConfigurationPage> {
           children: <Widget>[
             CustomTextField(
               controller: _keyTextEditingController,
-              hintText: 'private key',
+              hintText: 'Private key',
               prefixIcon: Icon(Icons.vpn_key),
               isPassword: false,
               keyboardType: TextInputType.text,
@@ -66,8 +65,7 @@ class _WalletConfigurationPageState extends State<WalletConfigurationPage> {
     final keyString = _keyTextEditingController.text;
 
     if(keyString != '' && keyString.isNotEmpty) {
-      final SharedPreferences prefs = await _prefs;
-      await prefs.setString('address_key', keyString);
+      PreferencesUtil().setPrefsString('address_key', keyString);
       Provider.of<WalletModel>(context, listen: false).setAddress();
       Provider.of<AppModel>(context, listen: false).navigatorKey.currentState.pushReplacementNamed('/HomePage');
     }

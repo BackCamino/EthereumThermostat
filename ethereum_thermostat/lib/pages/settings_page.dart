@@ -1,5 +1,5 @@
-import 'package:ethereumthermostat/dialogs/thermostat_configuration_dialog.dart';
-import 'package:ethereumthermostat/dialogs/wallet_configuration_dialog.dart';
+import 'package:ethereumthermostat/dialogs/thermostat_dialog.dart';
+import 'package:ethereumthermostat/dialogs/wallet_dialog.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -41,7 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       barrierDismissible: true,
                       context: context,
                       builder: (BuildContext context) =>
-                          ThermostatConfigurationDialog()),
+                          ThermostatDialog()),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[

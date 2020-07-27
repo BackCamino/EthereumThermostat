@@ -1,10 +1,13 @@
 import 'dart:math';
+import 'package:ethereumthermostat/dialogs/thermostat_dialog.dart';
+import 'package:ethereumthermostat/models/app_model.dart';
 import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/models/thermostat_controller_model.dart';
 import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:ethereumthermostat/widget/thermostat/thermostat.dart';
 import 'package:ethereumthermostat/widget/thermostat/thermostat_container.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -209,7 +212,19 @@ class _ControlPageState extends State<ControlPage> {
                     ]);
                   } else {
                     return Center(
-                      child: Text('Thermostat not configured', style: ThermostatAppTheme.title,),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text('Thermostat not configured', style: ThermostatAppTheme.title,),
+                          IconButton(
+                            icon: Icon(Icons.add_circle_outline),
+                            onPressed: () => showDialog<dynamic>(
+                                barrierDismissible: true,
+                                context: context,
+                                builder: (BuildContext context) => ThermostatDialog()),
+                          )
+                        ],
+                      ),
                     );
                   }
                 }),
