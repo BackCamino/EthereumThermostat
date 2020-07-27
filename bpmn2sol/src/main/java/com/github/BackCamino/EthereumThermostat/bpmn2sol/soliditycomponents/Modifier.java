@@ -30,7 +30,7 @@ public class Modifier extends Operation implements SolidityComponent {
         StringBuilder toPrint = new StringBuilder("modifier " + this.getName() + "(");
         this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.getParameters().size() > 0)
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
+            toPrint.setLength(toPrint.length() - 2);
         toPrint.append(") ");
         if (this.isAbstract()) toPrint.append("virtual ");
         toPrint.append("{\n");
@@ -42,11 +42,13 @@ public class Modifier extends Operation implements SolidityComponent {
 
     @Override
     public String invocation(Value... values) {
-        StringBuilder toPrint = new StringBuilder(this.getName() + "(");
-        Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
-        if (values.length > 0)
+        StringBuilder toPrint = new StringBuilder(this.getName());
+        if (values.length > 0) {
+            toPrint.append("(");
+            Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
             toPrint.setLength(toPrint.length() - 2);
-        toPrint.append(")");
+            toPrint.append(")");
+        }
 
         return toPrint.toString();
     }

@@ -13,11 +13,18 @@ public class Struct extends Type implements SolidityComponent, Declarable, Invok
 
     public Struct(String type, List<Variable> fields) {
         super(type);
+        fields.forEach(el -> el.setVisibility(Visibility.NONE));
         this.fields = new LinkedList<>(fields);
     }
 
     public void addField(Variable field) {
+        field.setVisibility(Visibility.NONE);
         if (!this.fields.contains(field)) this.fields.add(field);
+    }
+
+    public void addField(Variable field, int index) {
+        field.setVisibility(Visibility.NONE);
+        if (!this.fields.contains(field)) this.fields.add(index, field);
     }
 
     public List<Variable> getFields() {

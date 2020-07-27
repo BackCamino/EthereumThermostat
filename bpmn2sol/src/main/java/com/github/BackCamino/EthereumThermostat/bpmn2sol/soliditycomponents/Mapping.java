@@ -5,7 +5,7 @@ public class Mapping extends Type implements SolidityComponent {
     private Type valueType;
 
     public Mapping(Type keyType, Type valueType) {
-        super("mapping(" + keyType.print() + " => " + valueType.print()+")");
+        super("mapping(" + keyType.print() + " => " + valueType.print() + ")");
         this.keyType = keyType;
         this.valueType = valueType;
     }

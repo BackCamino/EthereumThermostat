@@ -2,6 +2,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.AssociationStruct;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.OwnedContract;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.*;
 import com.sun.tools.javac.Main;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -19,8 +20,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.capitalize;
-import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.decapitalize;
+import static com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.StringHelper.*;
 import static java.util.function.Predicate.not;
 
 public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
@@ -50,6 +50,8 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     public SolidityFile translate() {
         initializeContracts();
         initializeCommunicatingContractsAttributes();
+        addIsReadyFunction();
+        addSetterParticipantFunctions();
         initializeConfigurations();
         parseMessages();
 
@@ -63,6 +65,8 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      */
     private SolidityFile generateSolidityFile() {
         SolidityFile solidityFile = new SolidityFile();
+        OwnedContract ownedContract = new OwnedContract();
+        solidityFile.addComponent(ownedContract);
         this.contracts.forEach(solidityFile::addComponent);
 
         return solidityFile;
@@ -77,6 +81,10 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .stream()
                 .filter(not(this::isExtern))
                 .forEach(contracts::add);
+
+        //all contracts must extend Owned
+        OwnedContract ownedContract = new OwnedContract();
+        this.contracts.forEach(el -> el.addExtended(ownedContract));
     }
 
     /**
@@ -87,6 +95,108 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .stream()
                 .filter(not(this::isExtern))
                 .forEach(this::initializeCommunicatingContractsAttributes);
+    }
+
+    /**
+     * Adds isReady function to every contract
+     */
+    private void addIsReadyFunction() {
+        this.contracts.forEach(this::addIsReadyFunction);
+    }
+
+    /**
+     * Adds isReady function to a specific contract
+     *
+     * @param contract
+     */
+    private void addIsReadyFunction(Contract contract) {
+        Function function = new Function("isReady");
+        function.addReturned(new Variable("_isReady", new Type(Type.BaseTypes.BOOL)));
+
+        //check single instance contracts
+        singleInstanceContractsDealingWith(contract).stream()
+                .map(el -> new IfThenElse(isReadyCondition(el), List.of(new Statement("return false;"))))
+                .forEach(function::addStatement);
+
+        //check multiple instance contracts
+        multiInstanceParticipantsDealingWith(getParticipant(contract.getName())).stream()
+                .filter(this::isContract)
+                .map(el -> new For(
+                        new ValuedVariable("i", new Type(Type.BaseTypes.UINT), new Value(new Type(Type.BaseTypes.UINT), "0"))
+                        , new Condition("i < " + el.getParticipantMultiplicity().getMaximum())
+                        , new Statement("i++")
+                        , List.of(new IfThenElse(isReadyCondition(decapitalize(el.getName()) + "Values[i]." + decapitalize(el.getName())), List.of(new Statement("return false;"))))
+                ))
+                .forEach(function::addStatement);
+
+        function.addStatement(new Statement("return true;"));
+        contract.addFunction(function);
+    }
+
+    /**
+     * Adds setter functions for every participant
+     */
+    private void addSetterParticipantFunctions() {
+        for (Contract contract : this.contracts)
+            for (Participant participant : participantsDealingWith(getParticipant(contract.getName())))
+                addSetterParticipantFunctions(contract, participant);
+    }
+
+    /**
+     * Adds setter function in a contract for a specific participant
+     *
+     * @param contract
+     * @param participant
+     */
+    private void addSetterParticipantFunctions(Contract contract, Participant participant) {
+        Function function = isMultiInstance(participant) ? miSetterParticipantFunction(participant) : siSetterParticipantFunction(participant);
+        function.addModifier(OwnedContract.onlyOwnerModifier());
+        contract.addFunction(function);
+    }
+
+    private Function siSetterParticipantFunction(Participant participant) {
+        String participantName = decapitalize(VariablesParser.parseExtName(participant.getName()));
+        Function function = baseSetterParticipantFunction(participant);
+        function.addStatement(new Statement(participantName + " = _" + participantName + ";"));
+
+        return function;
+    }
+
+    private Function miSetterParticipantFunction(Participant participant) {
+        String participantName = decapitalize(VariablesParser.parseExtName(participant.getName()));
+        Function function = baseSetterParticipantFunction(participant);
+
+        function.addParameter(new Variable("id", new Type(Type.BaseTypes.UINT)));
+
+        Statement indexAssignment = new Statement(participantName + "Index[_" + participantName + "] = _id;");
+        Statement participantValuesAssignment = new Statement(participantName + "Values[_id]." + participantName + " = _" + participantName + ";");
+        function.addStatement(indexAssignment);
+        function.addStatement(participantValuesAssignment);
+
+        return function; //TODO
+    }
+
+    private Function baseSetterParticipantFunction(Participant participant) {
+        String participantName = decapitalize(VariablesParser.parseExtName(participant.getName()));
+        Function function = new Function(decapitalize(joinCamelCase("initialize", participantName, "address")));
+        Type parameterType = isExtern(participant) ? new Type(Type.BaseTypes.ADDRESS) : new Type(capitalize(participant.getName()));
+        function.addParameter(new Variable(participantName, parameterType));
+
+        return function;
+    }
+
+    private Condition isReadyCondition(Contract contract) {
+        return this.isReadyCondition(contract.getName());
+    }
+
+    private Condition isReadyCondition(String contractVariableName) {
+        String variableName = decapitalize(contractVariableName);
+        //address(<variableName) == address(0) || !<variableName>.isReady()
+        return new Condition("address(" + variableName + ") == address(0) || !" + variableName + ".isReady()");
+    }
+
+    private boolean isContract(Participant participant) {
+        return !isExtern(participant);
     }
 
     /**
@@ -103,6 +213,12 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 .map(el -> new Variable(decapitalize(VariablesParser.parseExtName(el.getName())), new Type(Type.BaseTypes.ADDRESS)))
                 .forEach(contract::addAttribute);
 
+        //add single instance contracts attributes
+        singleInstanceContractsDealingWith(participant).stream()
+                .distinct()
+                .map(el -> new Variable(decapitalize(el.getName()), new Type(capitalize(el.getName()))))
+                .forEach(contract::addAttribute);
+
         //TODO split in multiple functions
         //add struct <Participant>Values, array of that struct and mapping to the index
         for (Participant multiInstanceParticipant : multiInstanceParticipantsDealingWith(participant)) {
@@ -110,7 +226,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //add struct <Participant>Values
             Struct participantValues = getIncomingAttributesStruct(contract, multiInstanceParticipant);
             //add participant in struct
-            participantValues.addField(new Variable(decapitalize(miParticipantName), new Type(capitalize(miParticipantName)), Visibility.NONE));
+            participantValues.addField(new Variable(decapitalize(miParticipantName), new Type(capitalize(miParticipantName)), Visibility.NONE), 0);
+            //add association struct array index
+            participantValues.addField(new Variable("associationIndex", new Type(Type.BaseTypes.UINT), Visibility.NONE), 1);
             contract.addDeclaration(participantValues);
 
             //add array of struct <Participant>Values
@@ -122,6 +240,16 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             Mapping mappingDeclaration = new Mapping(new Type(multiInstanceParticipant.getName()), new Type(Type.BaseTypes.UINT));
             Variable mappingInstantiation = new Variable(decapitalize(multiInstanceParticipant.getName() + "Index"), mappingDeclaration);
             contract.addAttribute(mappingInstantiation);
+
+            //add function getValues
+            Function getValues = new Function("getValues");
+            Variable functionParameter = new Variable(decapitalize(miParticipantName), new Type(capitalize(miParticipantName)));
+            getValues.addParameter(functionParameter);
+            getValues.setMarker(Function.Markers.VIEW);
+            getValues.setVisibility(Visibility.INTERNAL);
+            getValues.addReturned(new Variable("storage _values", participantValues));
+            getValues.addStatement(new Statement("return " + arrayOfStruct.getName() + "[" + mappingInstantiation.getName() + "[" + functionParameter.getName() + "]];"));
+            contract.addFunction(getValues);
         }
     }
 
@@ -180,8 +308,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         }
 
         //create associations assignment statements
-        List<Statement> assignmentStatement = new LinkedList<>();
+        List<Statement> assignmentStatements = new LinkedList<>();
         for (int i = 0; i < associations.size(); i++) {
+            //add assignment in association
             StringBuilder statementString = new StringBuilder("associations[" + i + "] = Association(");
             associations.get(i)
                     .getParticipants().stream()
@@ -190,8 +319,20 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     .forEach(statementString::append);
             statementString.setLength(statementString.length() - 2);
             statementString.append(");");
-            assignmentStatement.add(new Statement(statementString.toString()));
+            assignmentStatements.add(new Statement(statementString.toString()));
+
+            //add assignment in <participant>Values (<participant>Values[<participantIndex>.associationIndex] = <associationIndex>;
+            int finalI = i;
+            associations.get(i)
+                    .getParticipants().stream()
+                    .filter(el -> isMultiInstance(el.getParticipant()))
+                    .map(el -> new Statement(decapitalize(el.getParticipant().getName()) + "Values[" + el.getIndex() + "].associationIndex = " + finalI + ";"))
+                    .forEach(assignmentStatements::add);
+            assignmentStatements.add(new Statement(""));
         }
+        assignmentStatements.remove(assignmentStatements.size() - 1);
+
+        //getAssociation function
 
         //add values to contracts
         for (Contract contract : this.contracts) {
@@ -209,7 +350,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             Constructor constructor = contract.getConstructor();
             if (constructor == null)
                 constructor = new Constructor(contract.getName());
-            assignmentStatement.forEach(constructor::addStatement);
+            assignmentStatements.forEach(constructor::addStatement);
             contract.setConstructor(constructor);
 
             //add association struct
@@ -218,8 +359,18 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //add association struct array
             contract.addAttribute(associationsArray);
 
-            //TODO add association index in <Participant>Values
-            //TODO
+            //add getAssociation function
+            for (Participant participant : associationStruct.getParticipants()) {
+                String decapParticipantName = decapitalize(participant.getName());
+                Function associationGetter = new Function("getAssociation");
+                associationGetter.setMarker(Function.Markers.VIEW);
+                associationGetter.setVisibility(Visibility.INTERNAL);
+                associationGetter.addReturned(new Variable("storage _association", associationStruct));
+                associationGetter.addParameter(new Variable(decapParticipantName, new Type(capitalize(participant.getName()))));
+                associationGetter.addStatement(new Statement("return associations[getValues(_" + decapParticipantName + ").associationIndex];"));
+
+                contract.addFunction(associationGetter);
+            }
         }
     }
 
@@ -378,7 +529,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //creates struct <Participant>Values
             Struct attributesStruct = getIncomingAttributesStruct(contract, source);
             parameters.forEach(attributesStruct::addField);
-            sourceSetter = decapitalize(attributesStruct.getName()) + "[" + source.getName() + "(msg.sender)]";
+            sourceSetter = decapitalize(attributesStruct.getName()) + "[" + decapitalize(source.getName()) + "Index[" + source.getName() + "(msg.sender)]]";
         } else {
             parameters.forEach(contract::addAttribute);
         }
@@ -515,8 +666,13 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      */
     private Collection<Contract> singleInstanceContractsDealingWith(Participant participant) {
         return participantsDealingWith(participant).stream()
+                .filter(not(this::isExtern))
                 .filter(not(this::isMultiInstance))
                 .map(this.contracts::getContract)
                 .collect(Collectors.toSet());
+    }
+
+    private Collection<Contract> singleInstanceContractsDealingWith(Contract contract) {
+        return singleInstanceContractsDealingWith(getParticipant(contract.getName()));
     }
 }
