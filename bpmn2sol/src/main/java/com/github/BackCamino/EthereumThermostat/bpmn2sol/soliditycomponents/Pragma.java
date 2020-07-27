@@ -40,6 +40,6 @@ public class Pragma implements SolidityComponent {
     }
 
     public String print() {
-        return "pragma " + directive + " " + value + ";";
+        return "pragma " + directive.print() + " " + value + ";";
     }
 }

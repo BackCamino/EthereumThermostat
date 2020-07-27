@@ -42,11 +42,13 @@ public class Modifier extends Operation implements SolidityComponent {
 
     @Override
     public String invocation(Value... values) {
-        StringBuilder toPrint = new StringBuilder(this.getName() + "(");
-        Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
-        if (values.length > 0)
+        StringBuilder toPrint = new StringBuilder(this.getName());
+        if (values.length > 0) {
+            toPrint.append("(");
+            Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
             toPrint.setLength(toPrint.length() - 2);
-        toPrint.append(")");
+            toPrint.append(")");
+        }
 
         return toPrint.toString();
     }

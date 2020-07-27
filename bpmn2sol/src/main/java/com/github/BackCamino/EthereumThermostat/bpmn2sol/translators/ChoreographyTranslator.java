@@ -65,6 +65,8 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      */
     private SolidityFile generateSolidityFile() {
         SolidityFile solidityFile = new SolidityFile();
+        OwnedContract ownedContract = new OwnedContract();
+        solidityFile.addComponent(ownedContract);
         this.contracts.forEach(solidityFile::addComponent);
 
         return solidityFile;
@@ -82,7 +84,6 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
         //all contracts must extend Owned
         OwnedContract ownedContract = new OwnedContract();
-        contracts.add(ownedContract);
         this.contracts.forEach(el -> el.addExtended(ownedContract));
     }
 
@@ -239,6 +240,16 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             Mapping mappingDeclaration = new Mapping(new Type(multiInstanceParticipant.getName()), new Type(Type.BaseTypes.UINT));
             Variable mappingInstantiation = new Variable(decapitalize(multiInstanceParticipant.getName() + "Index"), mappingDeclaration);
             contract.addAttribute(mappingInstantiation);
+
+            //add function getValues
+            Function getValues = new Function("getValues");
+            Variable functionParameter = new Variable(decapitalize(miParticipantName), new Type(capitalize(miParticipantName)));
+            getValues.addParameter(functionParameter);
+            getValues.setMarker(Function.Markers.VIEW);
+            getValues.setVisibility(Visibility.INTERNAL);
+            getValues.addReturned(new Variable("storage _values", participantValues));
+            getValues.addStatement(new Statement("return " + arrayOfStruct.getName() + "[" + mappingInstantiation.getName() + "[" + functionParameter.getName() + "]];"));
+            contract.addFunction(getValues);
         }
     }
 
@@ -310,7 +321,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             statementString.append(");");
             assignmentStatements.add(new Statement(statementString.toString()));
 
-            //add assignment in <participant>Values (<participant>Values[<participantIndex>.associationIndex = <associationIndex>;
+            //add assignment in <participant>Values (<participant>Values[<participantIndex>.associationIndex] = <associationIndex>;
             int finalI = i;
             associations.get(i)
                     .getParticipants().stream()
@@ -320,6 +331,8 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             assignmentStatements.add(new Statement(""));
         }
         assignmentStatements.remove(assignmentStatements.size() - 1);
+
+        //getAssociation function
 
         //add values to contracts
         for (Contract contract : this.contracts) {
@@ -346,8 +359,18 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //add association struct array
             contract.addAttribute(associationsArray);
 
-            //TODO add association index in <Participant>Values
-            //TODO
+            //add getAssociation function
+            for (Participant participant : associationStruct.getParticipants()) {
+                String decapParticipantName = decapitalize(participant.getName());
+                Function associationGetter = new Function("getAssociation");
+                associationGetter.setMarker(Function.Markers.VIEW);
+                associationGetter.setVisibility(Visibility.INTERNAL);
+                associationGetter.addReturned(new Variable("storage _association", associationStruct));
+                associationGetter.addParameter(new Variable(decapParticipantName, new Type(capitalize(participant.getName()))));
+                associationGetter.addStatement(new Statement("return associations[getValues(_" + decapParticipantName + ").associationIndex];"));
+
+                contract.addFunction(associationGetter);
+            }
         }
     }
 

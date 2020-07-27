@@ -3,6 +3,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.Objects;
 
 public class Variable implements SolidityComponent {
+    //TODO add storage, memory, calldata...
     private String name;
     private Type type;
     private Visibility visibility;
