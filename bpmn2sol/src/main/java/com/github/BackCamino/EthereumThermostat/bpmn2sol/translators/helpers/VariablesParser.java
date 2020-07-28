@@ -12,6 +12,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class VariablesParser {
+    public static List<Value> values(Message message) {
+        return variables(message).stream()
+                .map(ValuedVariable::getValue)
+                .collect(Collectors.toList());
+    }
+
     public static List<ValuedVariable> variables(Message message) {
         String variablesString = message.getName().split("\\(")[1];
         variablesString = variablesString.substring(0, variablesString.indexOf(")"));

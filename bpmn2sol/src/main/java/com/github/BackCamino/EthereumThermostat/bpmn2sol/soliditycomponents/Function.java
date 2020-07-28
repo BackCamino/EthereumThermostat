@@ -100,7 +100,7 @@ public class Function extends Operation {
         StringBuilder toPrint = new StringBuilder(this.getName() + "(");
         Stream.of(values).forEach(el -> toPrint.append(el.print() + ", "));
         if (values.length > 0)
-            toPrint.delete(toPrint.length() - 3, toPrint.length() - 1);
+            toPrint.setLength(toPrint.length() - 2);
         toPrint.append(");");
         return toPrint.toString();
     }
