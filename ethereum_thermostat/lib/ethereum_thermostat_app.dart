@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:ethereumthermostat/models/app_model.dart';
 import 'package:ethereumthermostat/models/config.dart';
+import 'package:ethereumthermostat/models/gateway.dart';
 import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/pages/home_page.dart';
@@ -51,6 +52,9 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
         ),
         ChangeNotifierProvider<ThermostatContract>(
           create: (_) => ThermostatContract(web3Eth),
+        ),
+        ChangeNotifierProvider<GatewayModel>(
+          create: (_) => GatewayModel(null),
         )
       ],
       child: MaterialApp(

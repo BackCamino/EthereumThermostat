@@ -31,7 +31,7 @@ dependencies:
   http: ^0.12.1
   local_auth: ^0.6.2+3
   web_socket_channel: ^1.1.0
-  flutter_blue: ^0.7.2
+  flutter_bluetooth_serial: ^0.2.2
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +54,7 @@ flutter:
    - assets/images/ethereum.png
    - assets/images/address.png
    - assets/images/sensor.png
+   - assets/images/gateway.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

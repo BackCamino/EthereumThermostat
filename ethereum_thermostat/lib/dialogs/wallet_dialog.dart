@@ -82,7 +82,7 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                                                         bottom: 16,
                                                         top: 8),
                                                     child: Text(
-                                                      'Thermostat configuration',
+                                                      'Wallet configuration',
                                                       style: ThermostatAppTheme
                                                           .title,
                                                     )),

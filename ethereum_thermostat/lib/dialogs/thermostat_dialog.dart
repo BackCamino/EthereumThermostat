@@ -25,166 +25,137 @@ class _ThermostatDialogState extends State<ThermostatDialog>
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Container(
+      color: ThermostatAppTheme.background,
       child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: AnimatedBuilder(
-            animation: animationController,
-            builder: (BuildContext context, Widget child) {
-              return AnimatedOpacity(
-                  duration: const Duration(milliseconds: 100),
-                  opacity: animationController.value,
-                  child: InkWell(
-                    splashColor: Colors.transparent,
-                    focusColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    hoverColor: Colors.transparent,
-                    onTap: () {
-                      if (barrierDismissible) {
-                        Navigator.pop(context);
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: <Widget>[
+            getAppBarUI(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Consumer<ThermostatContract>(
+                    builder: (context,thermostat, child) {
+                      if (thermostat != null &&
+                          thermostat.initialized) {
+                        return Column(
+                          children: <Widget>[
+                            ThermostatInfo(
+                              thermostat: thermostat,
+                            ),
+                            const Divider(
+                              height: 1,
+                            ),
+                          ],
+                        );
+                      }  else {
+                        return Center(
+                            child: Text(
+                              'Thermostat not configured',
+                              style: ThermostatAppTheme.title,
+                            )
+                        );
                       }
+                    }),
+              ),
+            ),
+            const Divider(
+              height: 1,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(
+                  left: 16, right: 16, bottom: 16, top: 8),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.6),
+                      blurRadius: 8,
+                      offset: const Offset(4, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                    highlightColor: Colors.transparent,
+                    onTap: () {
+                      Navigator.pop(context);
                     },
                     child: Center(
-                        child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(14.0)),
-                                  boxShadow: <BoxShadow>[
-                                    BoxShadow(
-                                        color: Colors.grey.withOpacity(0.2),
-                                        offset: const Offset(4, 4),
-                                        blurRadius: 8.0),
-                                  ],
-                                ),
-                                child: InkWell(
-                                    borderRadius: const BorderRadius.all(
-                                        Radius.circular(24.0)),
-                                    onTap: () {},
-                                    child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: <Widget>[
-                                              Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 16,
-                                                          right: 16,
-                                                          bottom: 16,
-                                                          top: 8),
-                                                  child: Text(
-                                                    'Thermostat configuration',
-                                                    style: ThermostatAppTheme
-                                                        .title,
-                                                  )),
-                                            ],
-                                          ),
-                                          Padding(
-                                              padding: const EdgeInsets.only(
-                                                  left: 14,
-                                                  right: 14,
-                                                  bottom: 16,
-                                                  top: 8),
-                                              child:
-                                                  Consumer<ThermostatContract>(
-                                                      builder: (context,
-                                                          thermostat, child) {
-                                                if (thermostat != null &&
-                                                    thermostat.initialized) {
-                                                  return Column(
-                                                    children: <Widget>[
-                                                      ThermostatInfo(
-                                                        thermostat: thermostat,
-                                                      ),
-                                                      Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .only(
-                                                                  left: 16,
-                                                                  right: 16,
-                                                                  bottom: 16,
-                                                                  top: 18),
-                                                          child: Container(
-                                                            height: 48,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: Colors
-                                                                  .redAccent,
-                                                              borderRadius:
-                                                                  const BorderRadius
-                                                                          .all(
-                                                                      Radius.circular(
-                                                                          24.0)),
-                                                              boxShadow: <
-                                                                  BoxShadow>[
-                                                                BoxShadow(
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .withOpacity(
-                                                                          0.6),
-                                                                  blurRadius: 8,
-                                                                  offset:
-                                                                      const Offset(
-                                                                          4, 4),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            child: Material(
-                                                              color: Colors
-                                                                  .transparent,
-                                                              child: InkWell(
-                                                                borderRadius:
-                                                                    const BorderRadius
-                                                                            .all(
-                                                                        Radius.circular(
-                                                                            24.0)),
-                                                                highlightColor:
-                                                                    Colors
-                                                                        .transparent,
-                                                                onTap: () {
-                                                                  thermostat
-                                                                      .removeThermostat();
-                                                                },
-                                                                child: Center(
-                                                                  child: Text(
-                                                                    'Remove thermostat',
-                                                                    style: TextStyle(
-                                                                        fontWeight:
-                                                                            FontWeight
-                                                                                .w500,
-                                                                        fontSize:
-                                                                            18,
-                                                                        color: Colors
-                                                                            .white),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ))
-                                                    ],
-                                                  );
-                                                } else {
-                                                  return Center(
-                                                      child: Text(
-                                                    'Thermostat not configured',
-                                                    style: ThermostatAppTheme
-                                                        .title,
-                                                  ));
-                                                }
-                                              }))
-                                        ]))))),
-                  ));
-            },
-          )),
+                      child: Text(
+                        'Remove thermostat',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 18,
+                            color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget getAppBarUI() {
+    return Container(
+      decoration: BoxDecoration(
+        color: ThermostatAppTheme.background,
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              offset: const Offset(0, 2),
+              blurRadius: 4.0),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top, left: 8, right: 8),
+        child: Row(
+          children: <Widget>[
+            Container(
+              alignment: Alignment.centerLeft,
+              width: AppBar().preferredSize.height + 40,
+              height: AppBar().preferredSize.height,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(32.0),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Icon(Icons.close),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Thermostat configuration',
+                  style: ThermostatAppTheme.title,
+                ),
+              ),
+            ),
+            Container(
+              width: AppBar().preferredSize.height + 40,
+              height: AppBar().preferredSize.height,
+            )
+          ],
+        ),
+      ),
     );
   }
 }
