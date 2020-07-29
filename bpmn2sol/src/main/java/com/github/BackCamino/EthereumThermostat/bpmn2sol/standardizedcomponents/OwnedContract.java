@@ -9,6 +9,7 @@ public class OwnedContract extends Contract {
 
     public OwnedContract(String name) {
         super(name);
+        this.setAbstract(true);
 
         //attributes
         this.addAttribute(ownerAttribute());

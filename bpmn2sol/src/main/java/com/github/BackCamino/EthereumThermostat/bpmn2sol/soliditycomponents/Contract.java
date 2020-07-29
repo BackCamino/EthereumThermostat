@@ -103,6 +103,7 @@ public class Contract implements Extendable {
 
     public String print() {
         StringBuilder toPrint = new StringBuilder();
+        if (this.isAbstract) toPrint.append("abstract ");
         toPrint.append("contract " + this.name);
         if (!this.extendeds.isEmpty()) {
             toPrint.append(" is ");

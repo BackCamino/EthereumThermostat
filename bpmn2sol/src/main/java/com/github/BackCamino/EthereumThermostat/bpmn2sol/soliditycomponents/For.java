@@ -21,6 +21,10 @@ public class For extends Statement {
         this.statements = new LinkedList<>(statements);
     }
 
+    public void addStatement(Statement statement) {
+        this.statements.add(statement);
+    }
+
     @Override
     public String print() {
         StringBuilder toPrint = new StringBuilder(super.print());
