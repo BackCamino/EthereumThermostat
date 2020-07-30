@@ -31,8 +31,7 @@ public class FunctionParser {
 
         return function;
     }
-
-
+    
     public static Function setterFunction(Message message) {
         return setterFunction(nameFunction(message), variables(message));
     }

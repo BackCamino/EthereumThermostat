@@ -5,6 +5,7 @@ import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Cond
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Event;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.AssociationStruct;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.ForEnableAssociations;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.OwnedContract;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.*;
 import com.sun.tools.javac.Main;
@@ -55,15 +56,15 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         configureActivations();
         addSetterParticipantFunctions();
         initializeConfigurations();
-        //parseMessages();
         parseChoreographyTasks();
+        parseGateways();
 
         return this.generateSolidityFile();
     }
 
     private void configureActivations() {
         Variable idVariable = new Variable("id", new Type(Type.BaseTypes.INT));
-        Variable associationVariable = new Variable("_association", new AssociationStruct());
+        Variable associationVariable = new Variable("_association", new AssociationStruct(), Visibility.NONE, Variable.Location.STORAGE);
         Mapping activationMapping = new Mapping(new Type(Type.BaseTypes.INT), new Type(Type.BaseTypes.BOOL));
         Function siIsEnabled = new Function(
                 "isEnabled",
@@ -682,6 +683,14 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         return singleInstanceContractsDealingWith(getParticipant(contract.getName()));
     }
 
+    private boolean dealsWithMi(Participant participant) {
+        return multiInstanceParticipantsDealingWith(participant).size() > 0;
+    }
+
+    private boolean dealsWithMi(Contract contract) {
+        return multiInstanceParticipantsDealingWith(getParticipant(contract.getName())).size() > 0;
+    }
+
     private Collection<ChoreographyTask> getChoreographyTasks() {
         return this.getModel().getModelElementsByType(SequenceFlow.class).stream()
                 .map(flow -> this.getModel().<ModelElementInstanceImpl>getModelElementById(flow.getAttributeValue("targetRef")))
@@ -692,6 +701,23 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
     private void parseChoreographyTasks() {
         this.getChoreographyTasks().forEach(this::parseChoreographyTask);
+    }
+
+    private List<String> eventBasedGatewayDeactivationsId(Collection<SequenceFlow> incomingFlows, String currentId) {
+        List<String> result = new LinkedList<>();
+
+        for (SequenceFlow flow : incomingFlows) {
+            ModelElementInstance modelElement = getModel().getModelElementById(flow.getSource().getId());
+            if (modelElement instanceof EventBasedGateway) {
+                flow.getSource().getOutgoing().stream()
+                        .map(SequenceFlow::getTarget)
+                        .map(BaseElement::getId)
+                        .forEach(result::add);
+            }
+        }
+
+        while (result.remove(currentId)) ;
+        return result;
     }
 
     private void parseChoreographyTask(ChoreographyTask task) {
@@ -709,15 +735,24 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             externals.stream().forEach(initial::addAttribute);     //add attribute in contract for each external
             //setter function for externals
             if (externals.size() > 0) {
+                senderFunction.setVisibility(Visibility.INTERNAL);
                 List<ValuedVariable> toBeSet = externals.stream()
                         .map(el -> new ValuedVariable(el.getName(), el.getType(), null))
                         .collect(Collectors.toList());
-                Function setterFunction = FunctionParser.setterFunction("set_" + FunctionParser.nameFunction(message), toBeSet);
+                Function setterFunction = FunctionParser.parametrizedFunction("set_" + FunctionParser.nameFunction(message), toBeSet);
+                //add require and check if participant deals with mi
+                if (dealsWithMi(task.getInitialParticipant())) {
+                    setterFunction.addStatement(new ForEnableAssociations("" + hash, true));
+                } else {
+                    setterFunction.addStatement(new Statement("require(isEnabled(" + hash + "), \"Not enabled\");"));
+                }
+
+                toBeSet.stream().map(el -> new Statement(el.getName() + " = _" + el.getName() + ";")).forEach(setterFunction::addStatement);
                 Collection<Event> setterEvents = EventParser.parseEvents(toBeSet);
                 setterEvents.forEach(el -> setterFunction.addStatement(new Statement(el.invocation(new Value("_" + el.getName().replaceFirst("Changed", "")))))); //adds event emit for every parameter
                 setterFunction.addModifier(OwnedContract.onlyOwnerModifier());
+
                 setterFunction.addStatement(new Statement(senderFunction.invocation()));
-                //TODO add call to sender function
                 //TODO check enabled
                 initial.addFunction(setterFunction);
                 setterEvents.forEach(initial::addEvent);
@@ -736,9 +771,10 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                         new Statement("i++")
                 );
                 forLoop.addStatement(new IfThenElse(
-                        new Condition("isEnabled(" + hash + ")"),
+                        new Condition("isEnabled(" + hash + ", associations[i])"),
                         List.of(
                                 new Statement("//TODO SET ABILITATION"),
+                                //TODO cannot do associations[i].participant
                                 new Statement("associations[i]." + decapitalize(task.getParticipantRef().getName()) + "." + sendStatement.print())
                         )
                 ));
@@ -771,10 +807,10 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     new Statement("i++"),
                     List.of(
                             new IfThenElse(
-                                    new Condition("isEnabled(associations[i]," + hash + ")"),
+                                    new Condition("isEnabled(" + hash + ", associations[i])"),
                                     List.of(
                                             new Statement("enabled = true;"),
-                                            new Statement("//TODO disable this and enable next")
+                                            new Statement("//TODO disable this and enable next") //TODO use ForEnableAssociations
                                     )
                             )
                     )
@@ -803,64 +839,63 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         //TODO
     }
 
-    /**
-     * Creates a function in a contract which sends info to the next task
-     *
-     * @param contract
-     * @param message
-     */
-    /*
-    private void parseSourceMessage(Contract contract, Message message, Participant target) {
-        //parse external attributes
-        Collection<Variable> externals = VariablesParser.parseExtVariables(VariablesParser.variables(message));
-        externals.stream().forEach(contract::addAttribute);     //add attribute in contract for each external
-        //setter function for externals
-        if (externals.size() > 0) {
-            List<ValuedVariable> toBeSet = externals.stream()
-                    .map(el -> new ValuedVariable(el.getName(), el.getType(), null))
-                    .collect(Collectors.toList());
-            Function setterFunction = FunctionParser.setterFunction("set_" + FunctionParser.nameFunction(message), toBeSet);
-            Collection<Event> setterEvents = EventParser.parseEvents(toBeSet);
-            setterEvents.forEach(el -> setterFunction.addStatement(new Statement(el.invocation(new Value("_" + el.getName().replaceFirst("Changed", "")))))); //adds event emit for every parameter
-            contract.addFunction(setterFunction);
-            setterEvents.forEach(contract::addEvent);
+    private void parseGateways() {
+        for (Gateway gateway : this.getModel().getModelElementsByType(Gateway.class)) {
+            for (Contract contract : this.contracts) {
+                Function gatewayFunction = new Function(gateway.getId());
+                Collection<ModelElementInstance> outgoingInstances = gateway.getOutgoing().stream().map(flow -> this.getModel().<ModelElementInstanceImpl>getModelElementById(flow.getAttributeValue("targetRef"))).collect(Collectors.toList());
+                for (ModelElementInstance target : outgoingInstances) {
+                    if (ChoreographyTask.isChoreographyTask(target)) {
+                        ChoreographyTask targetTask = new ChoreographyTask((ModelElementInstanceImpl) target, this.getModel());
+                        if (targetTask.getInitialParticipant().equals(getParticipant(contract.getName()))) { //is next source
+                            //TODO
+                            Collection<Variable> extVariables = VariablesParser.parseExtVariables(VariablesParser.variables(targetTask.getRequest().getMessage()));
+                            if (extVariables.size() > 0) {
+                                if (dealsWithMi(contract)) {
+                                    gatewayFunction.addStatement(new ForEnableAssociations("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode()));
+                                } else {
+                                    gatewayFunction.addStatement(new Statement("enable(" + targetTask.hashCode() + ");"));
+                                }
+                            } else {
+                                gatewayFunction.addStatement(new Statement(FunctionParser.baseFunction(targetTask.getRequest().getMessage()).invocation()));
+                            }
+                        } else if (targetTask.getParticipantRef().equals(getParticipant(contract.getName()))) { //is next target
+                            //TODO
+                            if (dealsWithMi(contract)) {
+                                gatewayFunction.addStatement(new ForEnableAssociations("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode()));
+                            } else {
+                                gatewayFunction.addStatement(new Statement("enable(" + targetTask.hashCode() + ");"));
+                            }
+                        }
+                    } else if (target instanceof Gateway) {
+                        Gateway targetGateway = (Gateway) target;
+                        if (dealsWithMi(contract)) {
+                            gatewayFunction.addStatement(new ForEnableAssociations("" + gateway.getId().hashCode(), "" + targetGateway.getId().hashCode()));
+                        } else {
+                            gatewayFunction.addStatement(new Statement(targetGateway.getId() + "();"));
+                        }
+                    }
+                }
+                //gatewayFunction.addStatement(new Statement("//TODO"));
+                contract.addFunction(gatewayFunction);
+            }
         }
     }
-     */
 
-    /**
-     * Creates a setter function in a contract related to an incoming message
-     *
-     * @param contract
-     * @param message
-     */
-    /*
-    private void parseTargetMessage(Contract contract, Message message, Participant source) {
-        //add attributes
-        Collection<? extends Variable> parameters = VariablesParser.variables(message);
-        String sourceSetter = null;
-        if (!isExtern(source) && isMultiInstance(source)) {
-            //creates struct <Participant>Values
-            Struct attributesStruct = getIncomingAttributesStruct(contract, source);
-            parameters.forEach(attributesStruct::addField);
-            sourceSetter = "getValues(" + source.getName() + "(msg.sender))";
-        } else {
-            parameters.forEach(contract::addAttribute);
+    private List<Statement> activations(Participant current, SequenceFlow flow) {
+        List<Statement> statements = new LinkedList<>();
+        ModelElementInstance node = this.getModel().getModelElementById(flow.getAttributeValue("targetRef"));
+        if (ChoreographyTask.isChoreographyTask(node)) {
+            ChoreographyTask destination = new ChoreographyTask((ModelElementInstanceImpl) node, this.getModel());
+            if (isExtern(destination.getInitialParticipant())) {
+                if (destination.getParticipantRef().equals(current)) {
+                    statements.add(new Statement(""));
+                }
+            }
+        } else if (node instanceof Gateway) {
+
         }
 
-        //add setter function
-        Function function = FunctionParser.setterFunction(message, sourceSetter);
-        contract.addFunction(function);
-
-        //add events TODO
-        Collection<Event> events = EventParser.parseEvents(message);
-        if (isMultiInstance(source))
-            events.forEach(el -> el.addParameter(new Variable("_" + decapitalize(source.getName()), new Type(capitalize(source.getName())))));
-        events.forEach(contract::addEvent);
-
-        events.forEach(el -> function.addStatement(new Statement(el.invocation(eventChangedAttributes(el, source)))));
-
-        //TODO
+        return null; //TODO
     }
-     */
 }

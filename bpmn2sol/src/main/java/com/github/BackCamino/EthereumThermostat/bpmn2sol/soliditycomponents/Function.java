@@ -68,7 +68,7 @@ public class Function extends Operation {
     public String print() {
         StringBuilder toPrint = new StringBuilder("function " + this.getName() + "(");
         //parameters
-        this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
+        this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + (el.getLocation().equals(Variable.Location.NONE) ? "" : (el.getLocation().print() + " ")) + el.getName() + ", "));
         if (this.getParameters().size() > 0)
             toPrint.setLength(toPrint.length() - 2);
         //special modifiers

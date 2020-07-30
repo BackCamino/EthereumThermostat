@@ -3,16 +3,32 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.Objects;
 
 public class Variable implements SolidityComponent {
-    //TODO add storage, memory, calldata...
+    public enum Location {
+        NONE,
+        STORAGE,
+        MEMORY,
+        CALLDATA;
+
+        public String print() {
+            return this.equals(Location.NONE) ? "" : this.name().toLowerCase();
+        }
+    }
+
+    private Location location;
     private String name;
     private Type type;
     private Visibility visibility;
 
-    public Variable(String name, Type type, Visibility visibility) {
+    public Variable(String name, Type type, Visibility visibility, Location location) {
         Objects.requireNonNull(name);
         this.name = name;
         this.type = type;
         this.visibility = visibility;
+        this.location = location;
+    }
+
+    public Variable(String name, Type type, Visibility visibility) {
+        this(name, type, visibility, Location.NONE);
     }
 
     public Variable(String name, Type type) {
@@ -43,10 +59,19 @@ public class Variable implements SolidityComponent {
         this.visibility = visibility;
     }
 
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
+    public Location getLocation() {
+        return this.location;
+    }
+
     @Override
     public String print() {
         return (this.type.print() + " "
                 + this.visibility.print() + " "
+                + (this.location.equals(Location.NONE) ? "" : (location.print() + " "))
                 + this.name + ";")
                 .replaceAll("  ", " ");
     }
