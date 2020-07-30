@@ -1,17 +1,16 @@
-
-import 'package:ethereumthermostat/models/wallet.dart';
+import 'package:ethereumthermostat/models/gateway_heaters.dart';
+import 'package:ethereumthermostat/models/gateway_sensors.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
-import 'package:ethereumthermostat/widget/dialogs/wallet_info.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class WalletConfigurationDialog extends StatefulWidget {
+class SensorPickDialog extends StatefulWidget {
   @override
-  _WalletConfigurationDialogState createState() => _WalletConfigurationDialogState();
+  _SensorPickDialogState createState() => _SensorPickDialogState();
 }
 
-class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> with TickerProviderStateMixin {
-
+class _SensorPickDialogState extends State<SensorPickDialog>
+    with TickerProviderStateMixin {
   AnimationController animationController;
   bool barrierDismissible = true;
 
@@ -48,6 +47,7 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                           child: Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Container(
+                                height: 400,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: const BorderRadius.all(
@@ -64,25 +64,23 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                                           Radius.circular(24.0)),
                                       onTap: () {},
                                       child: Column(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           mainAxisSize: MainAxisSize.min,
                                           children: <Widget>[
                                             Row(
                                               mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                                  MainAxisAlignment.center,
                                               children: <Widget>[
                                                 Padding(
                                                     padding:
-                                                    const EdgeInsets.only(
-                                                        left: 16,
-                                                        right: 16,
-                                                        bottom: 16,
-                                                        top: 8),
+                                                        const EdgeInsets.only(
+                                                            left: 16,
+                                                            right: 16,
+                                                            bottom: 16,
+                                                            top: 8),
                                                     child: Text(
-                                                      'Wallet configuration',
+                                                      'Add room',
                                                       style: ThermostatAppTheme
                                                           .title,
                                                     )),
@@ -94,17 +92,13 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                                                     right: 14,
                                                     bottom: 16,
                                                     top: 8),
-                                                child: Consumer<
-                                                    WalletModel>(
-                                                    builder: (context, wallet, child) {
-                                                      if(wallet != null && wallet.initialized) {
-                                                        return WalletInfo(
-                                                          wallet: wallet,
-                                                        );
-                                                      } else {
-                                                        return Center(child: Text('Wallet not configured', style: ThermostatAppTheme.title,));
-                                                      }
-                                                    }))
+                                                child: Column(
+                                                  children: <Widget>[
+                                                    _sensorsFrame(),
+                                                    _heatersFrame()
+                                                  ],
+                                                )
+                                            )
                                           ]
                                       )
                                   )
@@ -115,6 +109,68 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
               );
             },
           )),
+    );
+  }
+
+  Widget _sensorsFrame() {
+    return Consumer2<GatewaySensorsModel, GatewayHeatersModel>(
+      builder: (context, gatewaySensors, gatewayHeaters, child) {
+        if (gatewaySensors.device != null && gatewayHeaters.device != null) {
+          if(!gatewayHeaters.scanning) {
+            return Column(
+              children: <Widget>[
+                OutlineButton(
+                  onPressed: gatewaySensors.getDevices,
+                  child: Text('Scan sensors'),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: gatewaySensors.nearDevices.length,//gateway.nearDevices.length,
+                    itemBuilder: (context, index) {
+                      return Text(gatewaySensors.nearDevices[index]);
+                    }),
+              ],
+            );
+          } else {
+            return Text('Gateway heaters scanning...');
+          }
+        } else {
+          return Text('Gateways not configured!');
+        }},
+    );
+  }
+
+  Widget _heatersFrame() {
+    return Consumer2<GatewaySensorsModel, GatewayHeatersModel>(
+      builder: (context, gatewaySensors, gatewayHeaters, child) {
+        if (gatewaySensors.device != null && gatewayHeaters.device != null) {
+          if(!gatewaySensors.scanning) {
+            return Column(
+              children: <Widget>[
+                OutlineButton(
+                  onPressed: gatewayHeaters.getDevices,
+                  child: Text('Scan heaters'),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: gatewayHeaters.nearDevices.length,//gateway.nearDevices.length,
+                    itemBuilder: (context, index) {
+                      return Text(gatewayHeaters.nearDevices[index]);
+                    }),
+              ],
+            );
+          } else {
+            return Text('Gateway sensors scanning...');
+          }
+        } else {
+          return Text('Gateways not configured!');
+        }},
     );
   }
 }

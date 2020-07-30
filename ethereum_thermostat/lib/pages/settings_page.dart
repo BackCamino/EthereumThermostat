@@ -1,6 +1,7 @@
 import 'package:ethereumthermostat/dialogs/thermostat_dialog.dart';
 import 'package:ethereumthermostat/dialogs/wallet_dialog.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
+import 'package:ethereumthermostat/widget/dialogs/thermostat_gateway.dart';
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -37,11 +38,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   height: 10,
                 ),
                 GestureDetector(
-                  onTap: () => showDialog<dynamic>(
-                      barrierDismissible: true,
-                      context: context,
-                      builder: (BuildContext context) =>
-                          ThermostatDialog()),
+                  onTap: () {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    Navigator.push<dynamic>(
+                        context,
+                        MaterialPageRoute<dynamic>(
+                            builder: (BuildContext context) =>
+                                ThermostatDialog(),
+                            fullscreenDialog: true));
+                  },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[
@@ -69,7 +74,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTap: () => showDialog<dynamic>(
                       barrierDismissible: true,
                       context: context,
-                      builder: (BuildContext context) => WalletConfigurationDialog()),
+                      builder: (BuildContext context) =>
+                          WalletConfigurationDialog()),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[

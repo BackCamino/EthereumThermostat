@@ -5,6 +5,7 @@ import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/models/thermostat_controller_model.dart';
 import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
+import 'package:ethereumthermostat/widget/association_tile.dart';
 import 'package:ethereumthermostat/widget/thermostat/thermostat.dart';
 import 'package:ethereumthermostat/widget/thermostat/thermostat_container.dart';
 import 'package:flutter/cupertino.dart';
@@ -116,20 +117,10 @@ class _ControlPageState extends State<ControlPage> {
                                               shrinkWrap: true,
                                               itemCount: thermostat.sensors.length,
                                               itemBuilder: (context, index) {
-                                                return Row(
-                                                  children: <Widget>[
-                                                    Text(thermostat.sensors[index].actualTemp.toString() + '   Sensor ' + thermostat.sensors[index].sensorId.toString(), style: TextStyle(fontSize: 12),),
-                                                    Text('  -   Heater' + thermostat.sensors[index].heaterAssociate.toString(), style: TextStyle(fontSize: 12),),
-                                                    SizedBox(width: 10,),
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                          color: thermostat.heaters[thermostat.sensors[index].heaterAssociate].heaterStatus == 1 ? Colors.greenAccent : Colors.red,
-                                                          borderRadius: BorderRadius.circular(6)
-                                                      ),
-                                                      height: 6,
-                                                      width: 6,
-                                                    )
-                                                  ],
+                                                return AssociationTile(
+                                                  sensorName: 'Sensor ' + thermostat.sensors[index].sensorId.toString(),
+                                                  heaterName: 'Heater ' + thermostat.getHeater(thermostat.sensors[index].heaterAssociate).heaterId.toString(),
+                                                  heaterValue: thermostat.getHeater(thermostat.sensors[index].heaterAssociate).heaterStatus,
                                                 );
                                               }),
                                         );

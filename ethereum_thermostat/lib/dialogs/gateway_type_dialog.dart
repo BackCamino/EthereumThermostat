@@ -1,17 +1,13 @@
 
-import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
-import 'package:ethereumthermostat/widget/dialogs/wallet_info.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-class WalletConfigurationDialog extends StatefulWidget {
+class GatewayTypeDialog extends StatefulWidget {
   @override
-  _WalletConfigurationDialogState createState() => _WalletConfigurationDialogState();
+  _GatewayTypeDialogState createState() => _GatewayTypeDialogState();
 }
 
-class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> with TickerProviderStateMixin {
-
+class _GatewayTypeDialogState extends State<GatewayTypeDialog> with TickerProviderStateMixin {
   AnimationController animationController;
   bool barrierDismissible = true;
 
@@ -48,6 +44,7 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                           child: Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Container(
+                                  height: 400,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: const BorderRadius.all(
@@ -64,10 +61,8 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                                           Radius.circular(24.0)),
                                       onTap: () {},
                                       child: Column(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           mainAxisSize: MainAxisSize.min,
                                           children: <Widget>[
                                             Row(
@@ -82,7 +77,7 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                                                         bottom: 16,
                                                         top: 8),
                                                     child: Text(
-                                                      'Wallet configuration',
+                                                      'Add room',
                                                       style: ThermostatAppTheme
                                                           .title,
                                                     )),
@@ -94,17 +89,12 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
                                                     right: 14,
                                                     bottom: 16,
                                                     top: 8),
-                                                child: Consumer<
-                                                    WalletModel>(
-                                                    builder: (context, wallet, child) {
-                                                      if(wallet != null && wallet.initialized) {
-                                                        return WalletInfo(
-                                                          wallet: wallet,
-                                                        );
-                                                      } else {
-                                                        return Center(child: Text('Wallet not configured', style: ThermostatAppTheme.title,));
-                                                      }
-                                                    }))
+                                                child: Column(
+                                                  children: <Widget>[
+                                                    _choiceFrame()
+                                                  ],
+                                                )
+                                            )
                                           ]
                                       )
                                   )
@@ -115,6 +105,24 @@ class _WalletConfigurationDialogState extends State<WalletConfigurationDialog> w
               );
             },
           )),
+    );
+  }
+
+  Widget _choiceFrame() {
+    return Row(
+      children: <Widget>[
+        OutlineButton(
+          onPressed: () => Navigator.of(context).pop(1),
+          child: Text('Sensor gateway'),
+        ),
+        SizedBox(
+          width: 40,
+        ),
+        OutlineButton(
+          onPressed: () => Navigator.of(context).pop(2),
+          child: Text('Heater gateway'),
+        ),
+      ],
     );
   }
 }

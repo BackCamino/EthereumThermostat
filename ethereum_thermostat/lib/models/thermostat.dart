@@ -113,26 +113,38 @@ class ThermostatContract with ChangeNotifier {
     initProva();
   }
 
+  HeaterModel getHeater(int heaterId) {
+    return heaters.where((heater) => heater.heaterId == heaterId).first;
+  }
+
+  SensorModel getSensor(int sensorId) {
+    return sensors.where((sensor) => sensor.sensorId == sensorId).first;
+  }
+
   void initProva() {
 
     sensors = List();
     sensors.addAll([
       SensorModel(1),
       SensorModel(2),
-      SensorModel(3)
+      SensorModel(3),
+      SensorModel(4)
     ]);
     heaters = List();
     heaters.addAll([
       HeaterModel(1),
       HeaterModel(2),
       HeaterModel(3),
+      HeaterModel(4),
     ]);
-    sensors[0].setHeaterAssociate = 0;
-    sensors[1].setHeaterAssociate = 1;
-    sensors[2].setHeaterAssociate = 2;
+    sensors[0].setHeaterAssociate = 1;
+    sensors[1].setHeaterAssociate = 2;
+    sensors[2].setHeaterAssociate = 3;
+    sensors[3].setHeaterAssociate = 4;
     heaters[0].setHeaterStatus = 0;
     heaters[1].setHeaterStatus = 1;
     heaters[2].setHeaterStatus = 1;
+    heaters[3].setHeaterStatus = 0;
 
     _setValue = contract.function('setValue');
     _setValueEvent = _contract.event('valueChanged');
@@ -151,20 +163,24 @@ class ThermostatContract with ChangeNotifier {
     sensors.addAll([
       SensorModel(1),
       SensorModel(2),
-      SensorModel(3)
+      SensorModel(3),
+      SensorModel(4)
     ]);
     heaters = List();
     heaters.addAll([
       HeaterModel(1),
       HeaterModel(2),
       HeaterModel(3),
+      HeaterModel(4),
     ]);
     sensors[0].setHeaterAssociate = 0;
     sensors[1].setHeaterAssociate = 1;
     sensors[2].setHeaterAssociate = 2;
+    sensors[3].setHeaterAssociate = 3;
     heaters[0].setHeaterStatus = 0;
     heaters[1].setHeaterStatus = 1;
     heaters[2].setHeaterStatus = 1;
+    heaters[3].setHeaterStatus = 0;
 
     // Function
     _shutDownFun = _contract.function('shutDownFun');
