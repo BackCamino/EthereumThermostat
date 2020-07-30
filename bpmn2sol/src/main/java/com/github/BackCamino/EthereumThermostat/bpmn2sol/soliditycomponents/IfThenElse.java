@@ -19,25 +19,33 @@ public class IfThenElse extends Statement {
         this.elseBranch = new LinkedList<>(elseBranch);
     }
 
+    public void addThenStatement(Statement statement) {
+        this.thenBranch.add(statement);
+    }
+
+    public void addElseStatement(Statement statement) {
+        this.elseBranch.add(statement);
+    }
+
     @Override
     public String print() {
         StringBuilder toPrint = new StringBuilder("if(");
         toPrint.append(this.condition.print());
         toPrint.append(")");
 
-        toPrint.append(thenBranch.size() > 1 ? " {\n" : "\n");
+        toPrint.append(thenBranch.size() > 1 || thenBranch.size() == 0 ? " {\n" : "\n");
         this.thenBranch.stream()
                 .map(el -> el.printWithIndentation(1) + "\n")
                 .forEach(toPrint::append);
-        if (thenBranch.size() > 1) toPrint.append("}\n");
+        if (thenBranch.size() > 1 || thenBranch.size() == 0) toPrint.append("}\n");
 
         if (elseBranch.size() > 0) {
             toPrint.append("else ");
-            toPrint.append(elseBranch.size() > 1 ? " {\n" : "\n");
+            toPrint.append(elseBranch.size() > 1 || elseBranch.size() == 0 ? " {\n" : "\n");
             this.elseBranch.stream()
                     .map(el -> el.printWithIndentation(1) + "\n")
                     .forEach(toPrint::append);
-            if (elseBranch.size() > 1) toPrint.append("}\n");
+            if (elseBranch.size() > 1 || elseBranch.size() == 0) toPrint.append("}\n");
         }
 
         return toPrint.toString().trim();

@@ -25,15 +25,19 @@ public class For extends Statement {
         this.statements.add(statement);
     }
 
+    public List<Statement> getStatements() {
+        return this.statements;
+    }
+
     @Override
     public String print() {
         StringBuilder toPrint = new StringBuilder(super.print());
 
-        toPrint.append(statements.size() > 1 ? " {\n" : "\n");
+        toPrint.append(statements.size() > 1 || statements.size() == 0 ? " {\n" : "\n");
         statements.stream()
                 .map(el -> el.printWithIndentation(1) + "\n")
                 .forEach(toPrint::append);
-        if (statements.size() > 1) toPrint.append("}");
+        if (statements.size() > 1 || statements.size() == 0) toPrint.append("}");
 
         return toPrint.toString().trim();
     }

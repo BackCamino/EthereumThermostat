@@ -5,7 +5,7 @@ import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Cond
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Event;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.AssociationStruct;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.ForEnableAssociations;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.EnableAssociationsFor;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.OwnedContract;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.*;
 import com.sun.tools.javac.Main;
@@ -58,6 +58,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         initializeConfigurations();
         parseChoreographyTasks();
         parseGateways();
+        parseEventBasedGateways();
 
         return this.generateSolidityFile();
     }
@@ -722,7 +723,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
     private void parseChoreographyTask(ChoreographyTask task) {
         Message message = task.getRequest().getMessage();
-        int hash = task.getId().hashCode();
+        String hash = "" + task.getId().hashCode();
 
         Function setterFunctionTarget;
 
@@ -742,7 +743,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 Function setterFunction = FunctionParser.parametrizedFunction("set_" + FunctionParser.nameFunction(message), toBeSet);
                 //add require and check if participant deals with mi
                 if (dealsWithMi(task.getInitialParticipant())) {
-                    setterFunction.addStatement(new ForEnableAssociations("" + hash, true));
+                    setterFunction.addStatement(new EnableAssociationsFor("" + hash, true));
                 } else {
                     setterFunction.addStatement(new Statement("require(isEnabled(" + hash + "), \"Not enabled\");"));
                 }
@@ -792,34 +793,70 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //creates struct <Participant>Values
             Struct attributesStruct = getIncomingAttributesStruct(target, task.getInitialParticipant());
             parameters.forEach(attributesStruct::addField);
-            sourceSetter = "getValues(" + task.getInitialParticipant().getName() + "(msg.sender))";
+            sourceSetter = "getValues(" + task.getInitialParticipant().getName() + "(msg.sender)).";
         } else {
             parameters.forEach(target::addAttribute);
+            sourceSetter = "";
         }
 
         //add setter function
         Function function = FunctionParser.parametrizedFunction(message);
+        //extern initial participant
         if (isExtern(task.getInitialParticipant())) {
-            function.addStatement(new Statement("bool enabled = false;"));
-            function.addStatement(new For(
-                    new ValuedVariable("i", new Type(Type.BaseTypes.UINT), new Value("0")),
-                    new Condition("i < associations.length"),
-                    new Statement("i++"),
-                    List.of(
-                            new IfThenElse(
-                                    new Condition("isEnabled(" + hash + ", associations[i])"),
-                                    List.of(
-                                            new Statement("enabled = true;"),
-                                            new Statement("//TODO disable this and enable next") //TODO use ForEnableAssociations
-                                    )
-                            )
-                    )
-            ));
-            function.addStatement(new Statement("require(enabled, \"Not enabled\");"));
+            //only the address who calls
+            function.addModifier(OwnedContract.onlyAddressModifier(), List.of(new Value(decapitalize(VariablesParser.parseExtName(task.getInitialParticipant().getName())))));
+
+            function.addStatement(new Statement("bool _enabled;"));
+            EnableAssociationsFor enableAssociationsFor = new EnableAssociationsFor(hash, true);
+            function.addStatement(enableAssociationsFor);
+
+            ModelElementInstance next = getModel().getModelElementById(task.getOutgoing().get(0).getAttributeValue("targetRef"));
+            if (ChoreographyTask.isChoreographyTask(next)) {
+                ChoreographyTask nextTask = new ChoreographyTask((ModelElementInstanceImpl) next, this.getModel());
+                boolean hasNextMsgExtVars = VariablesParser.parseExtVariables(VariablesParser.variables(nextTask.getRequest().getMessage())).size() > 0;
+                if (isExtern(nextTask.getInitialParticipant())) {
+                    //this target is target of next with ext source
+                    if (nextTask.getParticipantRef().equals(task.getParticipantRef())) {
+                        if (dealsWithMi(target)) {
+                            enableAssociationsFor.addActivation("" + nextTask.getId().hashCode());
+                        } else {
+                            function.addStatement(new Statement("enable(" + nextTask.getId().hashCode()));
+                        }
+                    } else {
+                        String decName = decapitalize(nextTask.getParticipantRef().getName());
+                        if (isMultiInstance(nextTask.getParticipantRef())) {
+                            enableAssociationsFor.addStatementInIf(new Statement(decName + "Values[associations[i]." + decName + "Index].enable(" + nextTask.getId().hashCode() + ");"));
+                        } else {
+                            function.addStatement(new Statement(decName + ".enable(" + nextTask.getId().hashCode())); //TODO change enable with function
+                        }
+                    }
+                }
+                if (hasNextMsgExtVars) {
+                    if (nextTask.getInitialParticipant().equals(task.getParticipantRef())) {
+                        if (dealsWithMi(target)) {
+                            enableAssociationsFor.addActivation("" + nextTask.getId().hashCode());
+                        } else {
+                            function.addStatement(new Statement("enable(" + nextTask.getId().hashCode() + ");"));
+                        }
+                    } else {
+                        String decName = decapitalize(nextTask.getInitialParticipant().getName());
+                        if (isMultiInstance(nextTask.getInitialParticipant())) {
+                            enableAssociationsFor.addStatementInIf(new Statement(decName + "Values[associations[i]." + decName + "Index].enable(" + nextTask.getId().hashCode() + ");"));
+                        } else {
+                            function.addStatement(new Statement(decName + ".enable(" + nextTask.getId().hashCode() + ");"));
+                        }
+                    }
+                }
+            } else if (next instanceof Gateway) {
+
+            }
+
+            //set parameters
             function.getParameters().stream()
                     .map(el -> new Statement(el.getName().replaceFirst("_", "") + " = " + el.getName() + ";"))
                     .forEach(function::addStatement);
         }
+        //multi instance initial participant
         if (isMultiInstance(task.getInitialParticipant())) {
             function.addStatement(new Statement("require(getAssociation(" + task.getInitialParticipant().getName() + "(msg.sender)).activations[" + hash + "], \"Not Enabled\");"));
             //TODO disabilitation current
@@ -834,6 +871,8 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             events.forEach(el -> el.addParameter(new Variable("_" + decapitalize(task.getInitialParticipant().getName()), new Type(capitalize(task.getInitialParticipant().getName())))));
         events.forEach(target::addEvent);
 
+        String finalSourceSetter = sourceSetter;
+        parameters.forEach(el -> function.addStatement(new Statement(finalSourceSetter + el.getName() + " = _" + el.getName())));
         events.forEach(el -> function.addStatement(new Statement(el.invocation(eventChangedAttributes(el, task.getInitialParticipant())))));
 
         //TODO
@@ -852,7 +891,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                             Collection<Variable> extVariables = VariablesParser.parseExtVariables(VariablesParser.variables(targetTask.getRequest().getMessage()));
                             if (extVariables.size() > 0) {
                                 if (dealsWithMi(contract)) {
-                                    gatewayFunction.addStatement(new ForEnableAssociations("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode()));
+                                    gatewayFunction.addStatement(new EnableAssociationsFor("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode()));
                                 } else {
                                     gatewayFunction.addStatement(new Statement("enable(" + targetTask.hashCode() + ");"));
                                 }
@@ -862,7 +901,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                         } else if (targetTask.getParticipantRef().equals(getParticipant(contract.getName()))) { //is next target
                             //TODO
                             if (dealsWithMi(contract)) {
-                                gatewayFunction.addStatement(new ForEnableAssociations("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode()));
+                                gatewayFunction.addStatement(new EnableAssociationsFor("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode()));
                             } else {
                                 gatewayFunction.addStatement(new Statement("enable(" + targetTask.hashCode() + ");"));
                             }
@@ -870,7 +909,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     } else if (target instanceof Gateway) {
                         Gateway targetGateway = (Gateway) target;
                         if (dealsWithMi(contract)) {
-                            gatewayFunction.addStatement(new ForEnableAssociations("" + gateway.getId().hashCode(), "" + targetGateway.getId().hashCode()));
+                            gatewayFunction.addStatement(new EnableAssociationsFor("" + gateway.getId().hashCode(), "" + targetGateway.getId().hashCode()));
                         } else {
                             gatewayFunction.addStatement(new Statement(targetGateway.getId() + "();"));
                         }
@@ -878,6 +917,69 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 }
                 //gatewayFunction.addStatement(new Statement("//TODO"));
                 contract.addFunction(gatewayFunction);
+
+
+            }
+        }
+    }
+
+    private void parseEventBasedGateways() {
+        for (Gateway gateway : this.getModel().getModelElementsByType(Gateway.class)) {
+            for (Contract contract : this.contracts) {
+                Function gatewayFunction = new Function(gateway.getId());
+                Collection<ModelElementInstance> outgoingInstances = gateway.getOutgoing().stream().map(flow -> this.getModel().<ModelElementInstanceImpl>getModelElementById(flow.getAttributeValue("targetRef"))).collect(Collectors.toList());
+                //add notification for event based gateway. If another contract activates an event based gateway
+                if (gateway instanceof EventBasedGateway) {
+                    Function eventGwNotification = new Function("entered_" + gateway.getId());
+                    eventGwNotification.setVisibility(Visibility.EXTERNAL);
+
+                    if (dealsWithMi(contract)) {
+                        For deactivationFor = new For(
+                                new ValuedVariable("i", new Type(Type.BaseTypes.UINT), new Value("0")),
+                                new Condition("i < associations.length"),
+                                new Statement("i++"));
+                        for (ModelElementInstance target : outgoingInstances) {
+                            if (ChoreographyTask.isChoreographyTask(target)) {
+                                ChoreographyTask targetTask = new ChoreographyTask((ModelElementInstanceImpl) target, this.getModel());
+                                if (targetTask.getInitialParticipant().equals(getParticipant(contract.getName()))) { //is next source
+                                    Collection<Variable> extVariables = VariablesParser.parseExtVariables(VariablesParser.variables(targetTask.getRequest().getMessage()));
+                                    if (extVariables.size() > 0) {
+                                        deactivationFor.addStatement(new Statement("disable(" + targetTask.getId().hashCode() + ", associations[i]);"));
+                                    } else {
+                                        //TODO (nothing?)
+                                    }
+                                } else if (targetTask.getParticipantRef().equals(getParticipant(contract.getName()))) { //is next target
+                                    deactivationFor.addStatement(new Statement("disable(" + targetTask.getId().hashCode() + ", associations[i]);"));
+                                }
+                            } else if (target instanceof Gateway) {
+                                Gateway targetGateway = (Gateway) target;
+                                deactivationFor.addStatement(new Statement("disable(" + targetGateway.getId().hashCode() + ", associations[i]);"));
+                            }
+                        }
+                        if (deactivationFor.getStatements().size() > 0)
+                            eventGwNotification.addStatement(deactivationFor);
+                    } else {
+                        for (ModelElementInstance target : outgoingInstances) {
+                            if (ChoreographyTask.isChoreographyTask(target)) {
+                                ChoreographyTask targetTask = new ChoreographyTask((ModelElementInstanceImpl) target, this.getModel());
+                                if (targetTask.getInitialParticipant().equals(getParticipant(contract.getName()))) { //is next source
+                                    Collection<Variable> extVariables = VariablesParser.parseExtVariables(VariablesParser.variables(targetTask.getRequest().getMessage()));
+                                    if (extVariables.size() > 0) {
+                                        eventGwNotification.addStatement(new Statement("disable(" + targetTask.getId().hashCode() + ");"));
+                                    } else {
+                                        //TODO (nothing?)
+                                    }
+                                } else if (targetTask.getParticipantRef().equals(getParticipant(contract.getName()))) { //is next target
+                                    eventGwNotification.addStatement(new Statement("disable(" + targetTask.getId().hashCode() + ");"));
+                                }
+                            } else if (target instanceof Gateway) {
+                                Gateway targetGateway = (Gateway) target;
+                                eventGwNotification.addStatement(new Statement("disable(" + targetGateway.getId().hashCode() + ");"));
+                            }
+                        }
+                    }
+                    contract.addFunction(eventGwNotification);
+                }
             }
         }
     }
