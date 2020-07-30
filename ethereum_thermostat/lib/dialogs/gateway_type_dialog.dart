@@ -1,16 +1,13 @@
-import 'package:ethereumthermostat/models/gateway_heaters.dart';
-import 'package:ethereumthermostat/models/gateway_sensors.dart';
+
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-class SensorPickDialog extends StatefulWidget {
+class GatewayTypeDialog extends StatefulWidget {
   @override
-  _SensorPickDialogState createState() => _SensorPickDialogState();
+  _GatewayTypeDialogState createState() => _GatewayTypeDialogState();
 }
 
-class _SensorPickDialogState extends State<SensorPickDialog>
-    with TickerProviderStateMixin {
+class _GatewayTypeDialogState extends State<GatewayTypeDialog> with TickerProviderStateMixin {
   AnimationController animationController;
   bool barrierDismissible = true;
 
@@ -47,7 +44,7 @@ class _SensorPickDialogState extends State<SensorPickDialog>
                           child: Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Container(
-                                height: 400,
+                                  height: 400,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: const BorderRadius.all(
@@ -70,15 +67,15 @@ class _SensorPickDialogState extends State<SensorPickDialog>
                                           children: <Widget>[
                                             Row(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment.center,
+                                              MainAxisAlignment.center,
                                               children: <Widget>[
                                                 Padding(
                                                     padding:
-                                                        const EdgeInsets.only(
-                                                            left: 16,
-                                                            right: 16,
-                                                            bottom: 16,
-                                                            top: 8),
+                                                    const EdgeInsets.only(
+                                                        left: 16,
+                                                        right: 16,
+                                                        bottom: 16,
+                                                        top: 8),
                                                     child: Text(
                                                       'Add room',
                                                       style: ThermostatAppTheme
@@ -94,8 +91,7 @@ class _SensorPickDialogState extends State<SensorPickDialog>
                                                     top: 8),
                                                 child: Column(
                                                   children: <Widget>[
-                                                    _sensorsFrame(),
-                                                    _heatersFrame()
+                                                    _choiceFrame()
                                                   ],
                                                 )
                                             )
@@ -112,65 +108,21 @@ class _SensorPickDialogState extends State<SensorPickDialog>
     );
   }
 
-  Widget _sensorsFrame() {
-    return Consumer2<GatewaySensorsModel, GatewayHeatersModel>(
-      builder: (context, gatewaySensors, gatewayHeaters, child) {
-        if (gatewaySensors.device != null && gatewayHeaters.device != null) {
-          if(!gatewayHeaters.scanning) {
-            return Column(
-              children: <Widget>[
-                OutlineButton(
-                  onPressed: gatewaySensors.getDevices,
-                  child: Text('Scan sensors'),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: gatewaySensors.nearDevices.length,//gateway.nearDevices.length,
-                    itemBuilder: (context, index) {
-                      return Text(gatewaySensors.nearDevices[index]);
-                    }),
-              ],
-            );
-          } else {
-            return Text('Gateway heaters scanning...');
-          }
-        } else {
-          return Text('Gateways not configured!');
-        }},
-    );
-  }
-
-  Widget _heatersFrame() {
-    return Consumer2<GatewaySensorsModel, GatewayHeatersModel>(
-      builder: (context, gatewaySensors, gatewayHeaters, child) {
-        if (gatewaySensors.device != null && gatewayHeaters.device != null) {
-          if(!gatewaySensors.scanning) {
-            return Column(
-              children: <Widget>[
-                OutlineButton(
-                  onPressed: gatewayHeaters.getDevices,
-                  child: Text('Scan heaters'),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: gatewayHeaters.nearDevices.length,//gateway.nearDevices.length,
-                    itemBuilder: (context, index) {
-                      return Text(gatewayHeaters.nearDevices[index]);
-                    }),
-              ],
-            );
-          } else {
-            return Text('Gateway sensors scanning...');
-          }
-        } else {
-          return Text('Gateways not configured!');
-        }},
+  Widget _choiceFrame() {
+    return Row(
+      children: <Widget>[
+        OutlineButton(
+          onPressed: () => Navigator.of(context).pop(1),
+          child: Text('Sensor gateway'),
+        ),
+        SizedBox(
+          width: 40,
+        ),
+        OutlineButton(
+          onPressed: () => Navigator.of(context).pop(2),
+          child: Text('Heater gateway'),
+        ),
+      ],
     );
   }
 }

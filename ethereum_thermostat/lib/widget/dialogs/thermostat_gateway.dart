@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:ethereumthermostat/models/gateway.dart';
+import 'package:ethereumthermostat/models/gateway_heaters.dart';
+import 'package:ethereumthermostat/models/gateway_sensors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -26,8 +27,7 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
     });
     _streamSubscription =
         FlutterBluetoothSerial.instance.startDiscovery().listen((r) {
-      if (r.device.name != null &&
-          r.device.address != null) {
+      if (r.device.name != null && r.device.address != null) {
         setState(() {
           results.add(r);
         });
@@ -55,9 +55,9 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GatewayModel>(
-      builder: (context, gateway, child) {
-        if (gateway.device != null && gateway.connection != null) {
+    return Consumer2<GatewaySensorsModel, GatewayHeatersModel>(
+      builder: (context, gatewaySensors, gatewayHeaters, child) {
+        if (gatewaySensors.device != null && gatewayHeaters.device != null) {
           return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -75,7 +75,10 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
                     SizedBox(
                       width: 60,
                     ),
-                    Icon(Icons.done, color: Colors.green,)
+                    Icon(
+                      Icons.done,
+                      color: Colors.green,
+                    )
                   ],
                 ),
                 SizedBox(
@@ -83,16 +86,42 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
                 ),
                 Row(
                   children: <Widget>[
-                    Text(gateway.deviceName + '  [' + gateway.deviceAddress + "]"),
-                    SizedBox(width: 20,),
+                    Text(gatewaySensors.deviceName +
+                        '  [' +
+                        gatewaySensors.deviceAddress +
+                        "]"),
+                    SizedBox(
+                      width: 20,
+                    ),
                     GestureDetector(
-                      onTap: gateway.removeGateway,
-                      child: Icon(Icons.delete, color: Colors.red,),
+                      onTap: gatewaySensors.removeGateway,
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                      ),
+                    )
+                  ],
+                ),
+                Row(
+                  children: <Widget>[
+                    Text(gatewayHeaters.deviceName +
+                        '  [' +
+                        gatewayHeaters.deviceAddress +
+                        "]"),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    GestureDetector(
+                      onTap: gatewayHeaters.removeGateway,
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                      ),
                     )
                   ],
                 ),
               ]);
-        } else {
+        } else if (gatewaySensors.device == null && gatewayHeaters.device == null) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -124,13 +153,126 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
                   itemBuilder: (context, index) {
                     return GatewayDeviceTile(
                       device: results.toList()[index].device,
-                      gateway: gateway,
                     );
                   })
             ],
           );
+        } else {
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: Image.asset('assets/images/gateway.png'),
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Gateway'),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    isDiscovering
+                        ? Text('...')
+                        : GestureDetector(
+                      onTap: _startDiscovery,
+                      child: Icon(Icons.refresh),
+                    ),
+                  ],
+                ),
+                gatewaySensors.device != null ? _getTitle(1) : _getTitle(2),
+                SizedBox(
+                  height: 20,
+                ),
+                gatewaySensors.device != null
+                    ? Row(
+                  children: <Widget>[
+                    Text(gatewaySensors.deviceName +
+                        '  [' +
+                        gatewaySensors.deviceAddress +
+                        "]"),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    GestureDetector(
+                      onTap: gatewaySensors.removeGateway,
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                      ),
+                    )
+                  ],
+                )
+                    : Row(
+                  children: <Widget>[
+                    Text(gatewayHeaters.deviceName +
+                        '  [' +
+                        gatewayHeaters.deviceAddress +
+                        "]"),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    GestureDetector(
+                      onTap: gatewayHeaters.removeGateway,
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                      ),
+                    )
+                  ],
+                ),
+                ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: results.length,
+                    itemBuilder: (context, index) {
+                      return GatewayDeviceTile(
+                        device: results.toList()[index].device,
+                      );
+                    })
+              ]);
         }
       },
     );
+  }
+
+  Widget _getTitle(int active) {
+    switch (active) {
+      case 1:
+        return Row(
+          children: <Widget>[
+            Text('GatewaySensors'),
+            Icon(
+              Icons.done,
+              color: Colors.green,
+            ),
+            Text('GatewayHeaters'),
+            Icon(
+              Icons.done,
+              color: Colors.red,
+            ),
+          ],
+        );
+        break;
+      case 2:
+        return Row(
+          children: <Widget>[
+            Text('GatewaySensors'),
+            Icon(
+              Icons.done,
+              color: Colors.red,
+            ),
+            Text('GatewayHeaters'),
+            Icon(
+              Icons.done,
+              color: Colors.green,
+            ),
+          ],
+        );
+        break;
+    }
+    return Container();
   }
 }

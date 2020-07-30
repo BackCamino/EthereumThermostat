@@ -4,23 +4,32 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
-class GatewayModel with ChangeNotifier {
+class GatewaySensorsModel with ChangeNotifier {
 
   BluetoothDevice _device;
   BluetoothConnection _connection;
   Set<String> _nearDevices;
+  bool _scanning;
 
-  GatewayModel(BluetoothDevice device) {
+  GatewaySensorsModel(BluetoothDevice device) {
     setDevice = device;
+    setScanning = false;
     _nearDevices = Set();
   }
 
   set setDevice(BluetoothDevice device) {
     _device = device;
+    notifyListeners();
   }
 
   set setConnection(BluetoothConnection connection) {
     _connection = connection;
+    notifyListeners();
+  }
+
+  set setScanning(bool scanning) {
+    _scanning = scanning;
+    notifyListeners();
   }
 
   List<String> get nearDevices => _nearDevices.toList();
@@ -35,44 +44,38 @@ class GatewayModel with ChangeNotifier {
 
   bool get isConnected => _device.isConnected;
 
-  connectToDevice(BluetoothDevice newGateway) {
-    if(device != null) {
-      setDevice = null;
-    }
+  bool get scanning => _scanning;
+
+  connectToDevice() async {
     bool isDisconnecting = false;
     try {
-      BluetoothConnection.toAddress(newGateway.address).then((_connection) {
-        print('Connected to the device');
-        notifyListeners();
-        setDevice = newGateway;
-        setConnection = _connection;
-        isDisconnecting = false;
+      setConnection = await BluetoothConnection.toAddress(device.address);
+      print('Connected to the device');
+      isDisconnecting = false;
+      notifyListeners();
 
-        connection.input.listen((Uint8List data) {
-          _analyzeResponse(utf8.decode(data));
-        }).onDone(() {
-          removeGateway();
-          if (isDisconnecting) {
-            print('Disconnecting locally!');
-          } else {
-            print('Disconnected remotely!');
-          }
-        });
-      }).catchError((error) {
-        print('Cannot connect, exception occured');
-        print(error);
+      connection.input.listen((Uint8List data) {
+        _analyzeResponse(utf8.decode(data));
+      }).onDone(() {
+        removeGateway();
+        if (isDisconnecting) {
+          print('Disconnecting locally!');
+        } else {
+          print('Disconnected remotely!');
+        }
       });
-    }
-    catch (ex) {
+    } catch (ex) {
       print(ex);
     }
   }
 
   void removeGateway() async {
     if(device != null) {
-      await connection.close();
+      if(connection != null) {
+        await connection.close();
+        setConnection = null;
+      }
       setDevice = null;
-      setConnection = null;
     }
     notifyListeners();
   }
@@ -85,12 +88,22 @@ class GatewayModel with ChangeNotifier {
         _nearDevices.add(address);
       }
     }
+    setScanning = false;
     notifyListeners();
   }
 
-  void getDevices() {
-    if(connection != null) {
-      _sendMessage('getdevices');
+  void getDevices() async {
+    try {
+      setScanning = true;
+      if (connection == null) {
+        await connectToDevice();
+        _sendMessage('getdevices');
+      } else {
+        _sendMessage('getdevices');
+      }
+    } catch (ex) {
+      setScanning = false;
+      print(ex);
     }
     notifyListeners();
   }
