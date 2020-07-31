@@ -53,7 +53,6 @@ public class EnableAssociationsFor extends AssociationsFor {
     @Override
     public String print() {
         StringBuilder toPrint = new StringBuilder();
-        toPrint.append("_enabled = false;\n");
         toPrint.append(super.print());
         if (requireEnabled)
             toPrint.append("\nrequire(_enabled, \"Not Enabled\");");

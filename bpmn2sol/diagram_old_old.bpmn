@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xs="http://www.w3.org/2001/XMLSchema" id="_tTv5YOycEeiHGOQ2NkJZNQ" targetNamespace="http://www.signavio.com">
   <bpmn2:message id="Message_1jxyxtu" name="requestShutDown(bool shutDown = false)" />
-  <bpmn2:message id="Message_1sbim6g" name="initializeTemp(int actualTemp = EXT_temp)" />
-  <bpmn2:message id="Message_0h8d7h7" name="requestDestroy(bool destroy = true)" />
-  <bpmn2:message id="Message_15a838m" name="comunicateStatus(int actualStatus = EXT_status)" />
+  <bpmn2:message id="Message_1sbim6g" name="communicateTemp(int actualTemp = EXT_temp)" />
+  <bpmn2:message id="Message_0h8d7h7" name="requestDistrupt(bool distrupt = true)" />
+  <bpmn2:message id="Message_15a838m" name="comunicateHeaterStatus(int actualStatus = EXT_status)" />
   <bpmn2:message id="Message_1yycinj" name="heatOff(bool heat = false)" />
   <bpmn2:message id="Message_0e4vprj" name="heatOn(bool heat = true)" />
-  <bpmn2:message id="Message_0x7sv2e" name="shutDown(bool shutDown = true)" />
-  <bpmn2:message id="Message_1ksm8jv" name="changeThreshold(int threshold)" />
+  <bpmn2:message id="Message_0x7sv2e" name="requestShutDown(bool shutDown = true)" />
+  <bpmn2:message id="Message_1ksm8jv" name="setThreshold(int threshold)" />
   <bpmn2:message id="Message_0x8b6aw" name="communicateTemp(int actualTemp = EXT_temp)" />
   <bpmn2:message id="Message_0guv0gv" name="initializeThreshold(int threshold)" />
   <bpmn2:process id="Process_197wc8l" isExecutable="false">
@@ -49,8 +49,8 @@
       <bpmn2:participantRef>Participant_0s8xnze</bpmn2:participantRef>
       <bpmn2:messageFlowRef>MessageFlow_0m6to9a</bpmn2:messageFlowRef>
     </bpmn2:choreographyTask>
-    <bpmn2:sequenceFlow id="SequenceFlow_1th8j9a" sourceRef="ChoreographyTask_0t1mr04" targetRef="ParallelGateway_1djqsn1" />
-    <bpmn2:choreographyTask id="ChoreographyTask_0ljwr6v" name="Change threshold" initiatingParticipantRef="Participant_0qn9x2i">
+    <bpmn2:sequenceFlow id="SequenceFlow_1th8j9a" sourceRef="ChoreographyTask_0t1mr04" targetRef="ExclusiveGateway_1djqsn1" />
+    <bpmn2:choreographyTask id="ChoreographyTask_0ljwr6v" name="Set threshold" initiatingParticipantRef="Participant_0qn9x2i">
       <bpmn2:incoming>SequenceFlow_00cucta</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_1ly2tzn</bpmn2:outgoing>
       <bpmn2:participantRef>Participant_0qn9x2i</bpmn2:participantRef>
@@ -64,7 +64,7 @@
       <bpmn2:participantRef>Participant_0s8xnze</bpmn2:participantRef>
       <bpmn2:messageFlowRef>MessageFlow_1yw7lbn</bpmn2:messageFlowRef>
     </bpmn2:choreographyTask>
-    <bpmn2:sequenceFlow id="SequenceFlow_1ly2tzn" sourceRef="ChoreographyTask_0ljwr6v" targetRef="ParallelGateway_1djqsn1" />
+    <bpmn2:sequenceFlow id="SequenceFlow_1ly2tzn" sourceRef="ChoreographyTask_0ljwr6v" targetRef="ExclusiveGateway_1djqsn1" />
     <bpmn2:exclusiveGateway id="ExclusiveGateway_0g1cgro">
       <bpmn2:incoming>SequenceFlow_1j0myo9</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_17tpxco</bpmn2:outgoing>
@@ -89,8 +89,8 @@
       <bpmn2:participantRef>Participant_0s8xnze</bpmn2:participantRef>
       <bpmn2:messageFlowRef>MessageFlow_12lt7vx</bpmn2:messageFlowRef>
     </bpmn2:choreographyTask>
-    <bpmn2:sequenceFlow id="SequenceFlow_07vnzx1" name="Thermostat(Thermostat.threshold &#60;= Sensor.actualTemp)" sourceRef="ExclusiveGateway_1989mhw" targetRef="ExclusiveGateway_1k3x64r" />
-    <bpmn2:sequenceFlow id="SequenceFlow_05emy3l" name="Thermostat(Thermostat.threshold &#62; Sensor.actualTemp)" sourceRef="ExclusiveGateway_1989mhw" targetRef="ChoreographyTask_1hyjjdu" />
+    <bpmn2:sequenceFlow id="SequenceFlow_07vnzx1" name="threshold &#60;= actualTemp" sourceRef="ExclusiveGateway_1989mhw" targetRef="ExclusiveGateway_1k3x64r" />
+    <bpmn2:sequenceFlow id="SequenceFlow_05emy3l" name="threshold &#62; actualTemp" sourceRef="ExclusiveGateway_1989mhw" targetRef="ChoreographyTask_1hyjjdu" />
     <bpmn2:exclusiveGateway id="ExclusiveGateway_1owtsiu">
       <bpmn2:incoming>SequenceFlow_13akd1f</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_185004u</bpmn2:incoming>
@@ -98,7 +98,7 @@
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="SequenceFlow_13akd1f" sourceRef="ChoreographyTask_1hyjjdu" targetRef="ExclusiveGateway_1owtsiu" />
     <bpmn2:sequenceFlow id="SequenceFlow_185004u" sourceRef="ChoreographyTask_1iol2ld" targetRef="ExclusiveGateway_1owtsiu" />
-    <bpmn2:choreographyTask id="ChoreographyTask_1xx5m39" name="Heater status ack" initiatingParticipantRef="Participant_1x6c2sa">
+    <bpmn2:choreographyTask id="ChoreographyTask_1xx5m39" name="Heater status" initiatingParticipantRef="Participant_1x6c2sa">
       <bpmn2:incoming>SequenceFlow_1ob8dlr</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_1j0myo9</bpmn2:outgoing>
       <bpmn2:participantRef>Participant_1x6c2sa</bpmn2:participantRef>
@@ -119,7 +119,7 @@
     <bpmn2:sequenceFlow id="SequenceFlow_1yekona" sourceRef="EventBasedGateway_09o8x0n" targetRef="ChoreographyTask_0t1mr04" />
     <bpmn2:sequenceFlow id="SequenceFlow_00cucta" sourceRef="EventBasedGateway_09o8x0n" targetRef="ChoreographyTask_0ljwr6v" />
     <bpmn2:sequenceFlow id="SequenceFlow_0b9g0u3" sourceRef="EventBasedGateway_09o8x0n" targetRef="ChoreographyTask_0v63fno" />
-    <bpmn2:exclusiveGateway id="ParallelGateway_1djqsn1">
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_1djqsn1">
       <bpmn2:incoming>SequenceFlow_1th8j9a</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_1ly2tzn</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_0r9b3p8</bpmn2:outgoing>
@@ -153,14 +153,14 @@
       <bpmn2:participantRef>Participant_0qn9x2i</bpmn2:participantRef>
       <bpmn2:messageFlowRef>MessageFlow_0uifrxw</bpmn2:messageFlowRef>
     </bpmn2:choreographyTask>
-    <bpmn2:sequenceFlow id="SequenceFlow_17tpxco" name="Thermostat(Thermostat.shutDown == true)" sourceRef="ExclusiveGateway_0g1cgro" targetRef="ChoreographyTask_1w6pjnn" />
+    <bpmn2:sequenceFlow id="SequenceFlow_17tpxco" name="shutDown == true" sourceRef="ExclusiveGateway_0g1cgro" targetRef="ChoreographyTask_1w6pjnn" />
     <bpmn2:exclusiveGateway id="ExclusiveGateway_1q8hyoy">
       <bpmn2:incoming>SequenceFlow_0806spj</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_17ld9uu</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_0pgbe6e</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="SequenceFlow_0806spj" sourceRef="ChoreographyTask_1w6pjnn" targetRef="ExclusiveGateway_1q8hyoy" />
-    <bpmn2:sequenceFlow id="SequenceFlow_17ld9uu" name="Thermostat(Thermostat.shutDown == false)" sourceRef="ExclusiveGateway_0g1cgro" targetRef="ExclusiveGateway_1q8hyoy" />
+    <bpmn2:sequenceFlow id="SequenceFlow_17ld9uu" name="shutDown == false" sourceRef="ExclusiveGateway_0g1cgro" targetRef="ExclusiveGateway_1q8hyoy" />
     <bpmn2:sequenceFlow id="SequenceFlow_06mutp9" sourceRef="StartEvent_1gj1c1y" targetRef="ChoreographyTask_0vj94g3" />
     <bpmn2:sequenceFlow id="SequenceFlow_0zp8uol" sourceRef="ChoreographyTask_0vj94g3" targetRef="ChoreographyTask_1saqh14" />
     <bpmn2:sequenceFlow id="SequenceFlow_17hax0o" sourceRef="ChoreographyTask_0rf0cus" targetRef="ExclusiveGateway_1k3x64r" />
@@ -172,8 +172,8 @@
       <bpmn2:outgoing>SequenceFlow_0frpvid</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="SequenceFlow_0pgbe6e" sourceRef="ExclusiveGateway_1q8hyoy" targetRef="ExclusiveGateway_1u6pfgj" />
-    <bpmn2:sequenceFlow id="SequenceFlow_15wbrsg" name="Thermostat(Thermostat.destroy == false)" sourceRef="ExclusiveGateway_1u6pfgj" targetRef="EventBasedGateway_09o8x0n" />
-    <bpmn2:sequenceFlow id="SequenceFlow_0frpvid" name="Thermostat(Thermostat.destroy == true)" sourceRef="ExclusiveGateway_1u6pfgj" targetRef="EndEvent_14ddfbw" />
+    <bpmn2:sequenceFlow id="SequenceFlow_15wbrsg" name="distrupt == false" sourceRef="ExclusiveGateway_1u6pfgj" targetRef="EventBasedGateway_09o8x0n" />
+    <bpmn2:sequenceFlow id="SequenceFlow_0frpvid" name="distrupt == true" sourceRef="ExclusiveGateway_1u6pfgj" targetRef="EndEvent_14ddfbw" />
     <bpmn2:exclusiveGateway id="ExclusiveGateway_1jfy1g5">
       <bpmn2:incoming>SequenceFlow_0hrxrqi</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_0r9b3p8</bpmn2:incoming>
@@ -181,7 +181,7 @@
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="SequenceFlow_0czj6bx" sourceRef="ExclusiveGateway_1jfy1g5" targetRef="ExclusiveGateway_1989mhw" />
     <bpmn2:sequenceFlow id="SequenceFlow_0hrxrqi" sourceRef="ChoreographyTask_1saqh14" targetRef="ExclusiveGateway_1jfy1g5" />
-    <bpmn2:sequenceFlow id="SequenceFlow_0r9b3p8" sourceRef="ParallelGateway_1djqsn1" targetRef="ExclusiveGateway_1jfy1g5" />
+    <bpmn2:sequenceFlow id="SequenceFlow_0r9b3p8" sourceRef="ExclusiveGateway_1djqsn1" targetRef="ExclusiveGateway_1jfy1g5" />
   </bpmn2:choreography>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_Choreography_1" bpmnElement="Choreography">
@@ -319,7 +319,7 @@
         <di:waypoint x="1872" y="532" />
         <di:waypoint x="1778" y="532" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="ExclusiveGateway_13pmijy_di" bpmnElement="ParallelGateway_1djqsn1" isMarkerVisible="true">
+      <bpmndi:BPMNShape id="ExclusiveGateway_13pmijy_di" bpmnElement="ExclusiveGateway_1djqsn1" isMarkerVisible="true">
         <dc:Bounds x="2177" y="237" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ExclusiveGateway_1k3x64r_di" bpmnElement="ExclusiveGateway_1k3x64r" isMarkerVisible="true">
