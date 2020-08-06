@@ -3,10 +3,10 @@
   <bpmn2:message id="Message_1jxyxtu" name="requestShutDown(bool shutDown = false)" />
   <bpmn2:message id="Message_1sbim6g" name="initializeTemp(int actualTemp = EXT_temp)" />
   <bpmn2:message id="Message_0h8d7h7" name="requestDestroy(bool destroy = true)" />
-  <bpmn2:message id="Message_15a838m" name="comunicateStatus(int actualStatus = EXT_status)" />
+  <bpmn2:message id="Message_15a838m" name="communicateStatus(int actualStatus = EXT_status)" />
   <bpmn2:message id="Message_1yycinj" name="heatOff(bool heat = false)" />
   <bpmn2:message id="Message_0e4vprj" name="heatOn(bool heat = true)" />
-  <bpmn2:message id="Message_0x7sv2e" name="shutDown(bool shutDown = true)" />
+  <bpmn2:message id="Message_0x7sv2e" name="requestShutDown(bool shutDown = true)" />
   <bpmn2:message id="Message_1ksm8jv" name="changeThreshold(int threshold)" />
   <bpmn2:message id="Message_0x8b6aw" name="communicateTemp(int actualTemp = EXT_temp)" />
   <bpmn2:message id="Message_0guv0gv" name="initializeThreshold(int threshold)" />

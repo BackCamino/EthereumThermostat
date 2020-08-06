@@ -10,6 +10,7 @@ public class Function extends Operation {
     private List<Variable> returned;
     private Map<Modifier, List<Value>> modifiers;
     private Markers marker;
+    private Comment comment;
     //TODO add override
 
     public enum Markers implements SolidityComponent {
@@ -64,9 +65,21 @@ public class Function extends Operation {
         this.marker = marker;
     }
 
+    public Comment getComment() {
+        return comment;
+    }
+
+    public void setComment(Comment comment) {
+        this.comment = comment;
+    }
+
     @Override
     public String print() {
-        StringBuilder toPrint = new StringBuilder("function " + this.getName() + "(");
+        StringBuilder toPrint = new StringBuilder();
+        //comment
+        if (this.comment != null) toPrint.append(this.comment.print() + "\n");
+        //declaration
+        toPrint.append("function " + this.getName() + "(");
         //parameters
         this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + (el.getLocation().equals(Variable.Location.NONE) ? "" : (el.getLocation().print() + " ")) + el.getName() + ", "));
         if (this.getParameters().size() > 0)
@@ -77,6 +90,9 @@ public class Function extends Operation {
                 .append(this.getVisibility().print())
                 .append(this.isAbstract() ? " virtual " : " ")
                 .append(this.marker == null ? "" : (this.marker.print() + " "));
+        //modifiers
+        this.modifiers.entrySet()
+                .forEach(el -> toPrint.append(el.getKey().invocation(el.getValue().toArray(new Value[0])) + " "));
         //returned values
         if (this.returned.size() > 0) {
             toPrint.append("returns(");
@@ -84,9 +100,6 @@ public class Function extends Operation {
             toPrint.setLength(toPrint.length() - 2);
             toPrint.append(") ");
         }
-        //modifiers
-        this.modifiers.entrySet()
-                .forEach(el -> toPrint.append(el.getKey().invocation(el.getValue().toArray(new Value[0])) + " "));
         toPrint.append("{\n");
         //statements body
         this.getStatements().forEach(el -> toPrint.append(el.printWithIndentation(1) + "\n"));

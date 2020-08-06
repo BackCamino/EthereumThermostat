@@ -9,6 +9,9 @@ public class OwnedContract extends Contract {
 
     public OwnedContract(String name) {
         super(name);
+
+        this.setComment(new Comment("This abstract contract represents a contract with a owner.\nThe owner is the one who creates the contract.\nSo this contract provides modifiers and utils to manage property control.", true));
+
         this.setAbstract(true);
 
         //attributes
@@ -32,7 +35,7 @@ public class OwnedContract extends Contract {
     }
 
     public static Modifier onlyOwnerModifier() {
-        return new Modifier(
+        Modifier onlyOwnerModifier = new Modifier(
                 "onlyOwner",
                 Visibility.PUBLIC,
                 List.of(),
@@ -42,11 +45,14 @@ public class OwnedContract extends Contract {
                 ),
                 false
         );
+        onlyOwnerModifier.setComment(new Comment("Restricts access to the modified function only to the owner.", true));
+
+        return onlyOwnerModifier;
     }
 
     public static Modifier onlyAddressModifier() {
         Variable addressParameter = new Variable("_address", new Type(Type.BaseTypes.ADDRESS), Visibility.PRIVATE);
-        return new Modifier(
+        Modifier onlyAddressModifier = new Modifier(
                 "onlyAddress",
                 Visibility.PUBLIC,
                 List.of(addressParameter),
@@ -56,6 +62,9 @@ public class OwnedContract extends Contract {
                 ),
                 false
         );
+        onlyAddressModifier.setComment(new Comment("Restricts access to the modified function only to the provided address.", true));
+
+        return onlyAddressModifier;
     }
 
     public static Variable ownerAttribute() {

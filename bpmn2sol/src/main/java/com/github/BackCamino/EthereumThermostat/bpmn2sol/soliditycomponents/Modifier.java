@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Modifier extends Operation implements SolidityComponent {
+    private Comment comment;
+
     public static class SpecialUnderscore extends Statement {
         public SpecialUnderscore() {
             super("_;");
@@ -25,9 +27,20 @@ public class Modifier extends Operation implements SolidityComponent {
         super(name);
     }
 
+    public Comment getComment() {
+        return comment;
+    }
+
+    public void setComment(Comment comment) {
+        this.comment = comment;
+    }
+
     @Override
     public String print() {
-        StringBuilder toPrint = new StringBuilder("modifier " + this.getName() + "(");
+        StringBuilder toPrint = new StringBuilder();
+        if (this.comment != null) toPrint.append(this.comment.print() + "\n");
+        toPrint.append("modifier " + this.getName() + "(");
+        //declaration
         this.getParameters().forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.getParameters().size() > 0)
             toPrint.setLength(toPrint.length() - 2);

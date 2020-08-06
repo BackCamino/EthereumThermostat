@@ -12,6 +12,7 @@ public class Contract implements Extendable {
     private Set<Event> events;
     private Set<Declarable> declarations;
     private boolean isAbstract;
+    private Comment comment;
 
     public Contract(String name, Constructor constructor, Collection<Variable> attributes,
                     Collection<Function> functions, Collection<Modifier> modifiers, Collection<Event> events, Collection<Declarable> declarations) {
@@ -101,8 +102,17 @@ public class Contract implements Extendable {
         return attributes;
     }
 
+    public Comment getComment() {
+        return comment;
+    }
+
+    public void setComment(Comment comment) {
+        this.comment = comment;
+    }
+
     public String print() {
         StringBuilder toPrint = new StringBuilder();
+        if (this.comment != null) toPrint.append(this.comment.print() + "\n");
         if (this.isAbstract) toPrint.append("abstract ");
         toPrint.append("contract " + this.name);
         if (!this.extendeds.isEmpty()) {
