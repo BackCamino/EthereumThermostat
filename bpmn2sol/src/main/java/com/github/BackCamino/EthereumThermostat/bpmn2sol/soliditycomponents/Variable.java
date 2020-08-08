@@ -27,6 +27,10 @@ public class Variable implements SolidityComponent {
         this.location = location;
     }
 
+    public Variable(String name, Type type, Location location) {
+        this(name, type, Visibility.NONE, location);
+    }
+
     public Variable(String name, Type type, Visibility visibility) {
         this(name, type, visibility, Location.NONE);
     }

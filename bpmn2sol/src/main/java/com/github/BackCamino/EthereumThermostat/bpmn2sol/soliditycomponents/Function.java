@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class Function extends Operation {
+public class Function extends Operation implements StatementContainer {
     private List<Variable> returned;
     private Map<Modifier, List<Value>> modifiers;
     private Markers marker;
@@ -96,7 +96,7 @@ public class Function extends Operation {
         //returned values
         if (this.returned.size() > 0) {
             toPrint.append("returns(");
-            returned.forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
+            this.returned.forEach(el -> toPrint.append(el.getType().print() + " " + (el.getLocation().equals(Variable.Location.NONE) ? "" : (el.getLocation().print() + " ")) + el.getName() + ", "));
             toPrint.setLength(toPrint.length() - 2);
             toPrint.append(") ");
         }

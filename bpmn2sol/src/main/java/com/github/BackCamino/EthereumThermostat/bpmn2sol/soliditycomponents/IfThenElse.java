@@ -3,7 +3,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.LinkedList;
 import java.util.List;
 
-public class IfThenElse extends Statement {
+public class IfThenElse extends Statement implements StatementContainer, FlowControl {
     private Condition condition;
     private List<Statement> thenBranch;
     private List<Statement> elseBranch;
@@ -49,5 +49,10 @@ public class IfThenElse extends Statement {
         }
 
         return toPrint.toString().trim();
+    }
+
+    @Override
+    public void addStatement(Statement statement) {
+        this.addThenStatement(statement);
     }
 }

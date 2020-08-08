@@ -2,11 +2,12 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
 import java.util.Objects;
 
-public class Comment implements SolidityComponent {
+public class Comment extends Statement {
     private String comment;
     private boolean documentation;
 
     public Comment(String comment, boolean documentation) {
+        super(comment);
         Objects.requireNonNull(comment);
         this.comment = comment.trim();
         this.documentation = documentation;

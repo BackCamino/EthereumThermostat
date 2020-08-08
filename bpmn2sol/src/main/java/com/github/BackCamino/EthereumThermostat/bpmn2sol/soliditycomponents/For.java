@@ -3,7 +3,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.LinkedList;
 import java.util.List;
 
-public class For extends Statement {
+public class For extends Statement implements StatementContainer, FlowControl {
     private ValuedVariable start;
     private Condition condition;
     private Statement increment;

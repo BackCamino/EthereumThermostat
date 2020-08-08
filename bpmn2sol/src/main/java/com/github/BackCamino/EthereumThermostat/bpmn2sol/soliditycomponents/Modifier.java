@@ -3,7 +3,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class Modifier extends Operation implements SolidityComponent {
+public class Modifier extends Operation {
     private Comment comment;
 
     public static class SpecialUnderscore extends Statement {

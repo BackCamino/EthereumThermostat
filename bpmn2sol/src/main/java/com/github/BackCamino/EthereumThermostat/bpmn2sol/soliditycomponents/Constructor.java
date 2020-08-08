@@ -3,7 +3,7 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class Constructor extends Operation {
+public class Constructor extends Operation implements StatementContainer {
 
     /**
      * @param name contract name

@@ -2,12 +2,14 @@ package com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Condition;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.IfThenElse;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Require;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Statement;
 
 import java.util.List;
 
 public class EnableAssociationsFor extends AssociationsFor {
     private IsAssociationEnabledIf isAssociationEnabledIf;
+    private FirstEnabledIf firstEnabledIf;
     private boolean requireEnabled;
 
     public class IsAssociationEnabledIf extends IfThenElse {
@@ -17,9 +19,29 @@ public class EnableAssociationsFor extends AssociationsFor {
         }
     }
 
+    public class FirstEnabledIf extends IfThenElse {
+        public FirstEnabledIf() {
+            super(new Condition("!_enabled"), List.of());
+        }
+    }
+
+    public static class EnabledCycleRequire extends Require {
+        public EnabledCycleRequire() {
+            super(new Condition("_enabled"), "Not enabled");
+        }
+    }
+
+    public static class IsEnabledDeclaration extends Statement {
+        public IsEnabledDeclaration() {
+            super("bool _enabled = false;");
+        }
+    }
+
     public EnableAssociationsFor(String toCheck, boolean requireEnabled) {
         this.isAssociationEnabledIf = new IsAssociationEnabledIf(toCheck);
-        this.isAssociationEnabledIf.addThenStatement(new Statement("_enabled = true;"));
+        this.firstEnabledIf = new FirstEnabledIf();
+        this.isAssociationEnabledIf.addStatement(firstEnabledIf);
+        this.firstEnabledIf.addThenStatement(new Statement("_enabled = true;"));
         this.addStatement(this.isAssociationEnabledIf);
         this.requireEnabled = requireEnabled;
         this.addDeactivation(toCheck);
@@ -48,6 +70,10 @@ public class EnableAssociationsFor extends AssociationsFor {
 
     public void addStatementInIf(Statement statement) {
         this.isAssociationEnabledIf.addThenStatement(statement);
+    }
+
+    public FirstEnabledIf getFirstEnabledIf() {
+        return firstEnabledIf;
     }
 
     @Override

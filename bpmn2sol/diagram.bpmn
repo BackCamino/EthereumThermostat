@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xs="http://www.w3.org/2001/XMLSchema" id="_tTv5YOycEeiHGOQ2NkJZNQ" targetNamespace="http://www.signavio.com">
-  <bpmn2:message id="Message_1jxyxtu" name="requestShutDown(bool shutDown = false)" />
+  <bpmn2:message id="Message_1jxyxtu" name="requestWakeUp(bool shutDown = false)" />
   <bpmn2:message id="Message_1sbim6g" name="initializeTemp(int actualTemp = EXT_temp)" />
   <bpmn2:message id="Message_0h8d7h7" name="requestDestroy(bool destroy = true)" />
   <bpmn2:message id="Message_15a838m" name="communicateStatus(int actualStatus = EXT_status)" />
@@ -139,7 +139,7 @@
       <bpmn2:messageFlowRef>MessageFlow_1m9y441</bpmn2:messageFlowRef>
     </bpmn2:choreographyTask>
     <bpmn2:sequenceFlow id="SequenceFlow_0mumuhs" sourceRef="EventBasedGateway_09o8x0n" targetRef="ChoreographyTask_0rf0cus" />
-    <bpmn2:choreographyTask id="ChoreographyTask_1saqh14" name="Communicate temp" initiatingParticipantRef="Participant_0lxmze2">
+    <bpmn2:choreographyTask id="ChoreographyTask_1saqh14" name="Communicate initial temp" initiatingParticipantRef="Participant_0lxmze2">
       <bpmn2:incoming>SequenceFlow_0zp8uol</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_0hrxrqi</bpmn2:outgoing>
       <bpmn2:participantRef>Participant_0lxmze2</bpmn2:participantRef>

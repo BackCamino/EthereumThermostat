@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class Operation implements SolidityComponent, Invokable {
+public abstract class Operation implements SolidityComponent, Invokable, StatementContainer {
     private String name;
     private Visibility visibility;
     private List<Variable> parameters;
