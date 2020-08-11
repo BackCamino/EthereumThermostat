@@ -30,24 +30,24 @@ public class Contract implements Extendable {
         this(name, null, Set.of(), Set.of(), Set.of(), Set.of(), Set.of());
     }
 
-    public void addAttribute(Variable attribute) {
-        attributes.add(attribute);
+    public boolean addAttribute(Variable attribute) {
+        return attributes.add(attribute);
     }
 
-    public void addFunction(Function function) {
-        functions.add(function);
+    public boolean addFunction(Function function) {
+        return functions.add(function);
     }
 
-    public void addModifier(Modifier modifier) {
-        modifiers.add(modifier);
+    public boolean addModifier(Modifier modifier) {
+        return modifiers.add(modifier);
     }
 
-    public void addEvent(Event event) {
-        events.add(event);
+    public boolean addEvent(Event event) {
+        return events.add(event);
     }
 
-    public void addDeclaration(Declarable declaration) {
-        declarations.add(declaration);
+    public boolean addDeclaration(Declarable declaration) {
+        return declarations.add(declaration);
     }
 
     public void addExtended(Extendable toExtend, Value... variables) {

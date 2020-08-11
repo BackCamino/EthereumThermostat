@@ -2,6 +2,7 @@
   <dictionary name="emman">
     <words>
       <w>bpmn</w>
+      <w>calldata</w>
     </words>
   </dictionary>
 </component>
