@@ -1,6 +1,7 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,7 +13,7 @@ public class SolidityFile implements SolidityComponent {
 
     public SolidityFile(List<Pragma> pragmaDirectives, Collection<Import> imports, List<? extends SolidityComponent> components, SPDXLicense license) {
         this.pragmaDirectives = new LinkedList<>(pragmaDirectives);
-        this.imports = new LinkedList<>(imports);
+        this.imports = new LinkedHashSet<>(imports);
         this.components = new LinkedList<>(components);
         this.license = license;
     }

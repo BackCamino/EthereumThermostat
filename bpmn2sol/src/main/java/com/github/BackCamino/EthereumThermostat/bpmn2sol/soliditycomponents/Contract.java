@@ -18,12 +18,12 @@ public class Contract implements Extendable {
                     Collection<Function> functions, Collection<Modifier> modifiers, Collection<Event> events, Collection<Declarable> declarations) {
         this.name = name;
         this.constructor = constructor;
-        this.attributes = new HashSet<>(attributes);
-        this.functions = new HashSet<>(functions);
-        this.modifiers = new HashSet<>(modifiers);
-        this.events = new HashSet<>(events);
-        this.declarations = new HashSet<>(declarations);
-        this.extendeds = new HashMap<>();
+        this.attributes = new LinkedHashSet<>(attributes);
+        this.functions = new LinkedHashSet<>(functions);
+        this.modifiers = new LinkedHashSet<>(modifiers);
+        this.events = new LinkedHashSet<>(events);
+        this.declarations = new LinkedHashSet<>(declarations);
+        this.extendeds = new LinkedHashMap<>();
     }
 
     public Contract(String name) {

@@ -4,13 +4,13 @@ import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Cont
 import org.camunda.bpm.model.bpmn.instance.Participant;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 
 public class ContractsSet implements Set<Contract> {
-    private Set<Contract> contracts = new HashSet<>();
+    private Set<Contract> contracts = new LinkedHashSet<>();
 
     public Contract getContract(Participant participant) {
         return this.getContract(el -> el.getName().equals(participant.getName()));

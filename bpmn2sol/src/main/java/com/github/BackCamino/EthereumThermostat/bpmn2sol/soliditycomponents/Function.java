@@ -1,6 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +28,13 @@ public class Function extends Operation implements StatementContainer {
         super(name, visibility, parameters, statements, isAbstract);
         this.returned = new LinkedList<>(returned);
         this.marker = marker;
-        this.modifiers = new HashMap<>();
+        this.modifiers = new LinkedHashMap<>();
     }
 
     public Function(String name) {
         super(name);
         this.returned = new LinkedList<>();
-        this.modifiers = new HashMap<>();
+        this.modifiers = new LinkedHashMap<>();
     }
 
     public void addModifier(Modifier modifier, Value... values) {
