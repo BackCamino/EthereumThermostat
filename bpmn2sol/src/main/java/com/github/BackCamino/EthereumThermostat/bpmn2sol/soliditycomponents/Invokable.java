@@ -5,6 +5,6 @@ public interface Invokable {
 
     default String invocation(String source, Value... values) {
         // TODO consider using Variable instead of String for source
-        return source != null ? (source + ".") : ("") + invocation(values);
+        return (source != null ? (source + ".") : ("")) + this.invocation(values);
     }
 }

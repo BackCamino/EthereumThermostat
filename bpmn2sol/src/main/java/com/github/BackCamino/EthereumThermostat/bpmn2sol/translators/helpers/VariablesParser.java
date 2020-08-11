@@ -74,4 +74,20 @@ public class VariablesParser {
     public static List<ValuedVariable> parseNotValuedVariables(List<ValuedVariable> variables) {
         return variables.stream().filter(el -> el.getValue() == null).collect(Collectors.toList());
     }
+
+    public static Value[] callingValues(List<ValuedVariable> variables) {
+        List<Value> values = new LinkedList<>();
+
+        for (ValuedVariable variable : variables) {
+            if (variable.getValue() != null)
+                values.add(new Value(parseExtName(variable.getValue().getValue())));
+            else {
+                String valueName = parseExtName(variable.getName());
+                if (!valueName.startsWith("_")) valueName = "_" + valueName;
+                values.add(new Value(valueName));
+            }
+        }
+
+        return values.toArray(new Value[0]);
+    }
 }

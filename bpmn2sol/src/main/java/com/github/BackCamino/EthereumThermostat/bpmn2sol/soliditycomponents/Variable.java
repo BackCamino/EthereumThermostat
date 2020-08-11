@@ -93,7 +93,7 @@ public class Variable implements SolidityComponent {
         if (this == o) return true;
         if (!(o instanceof Variable)) return false;
         Variable variable = (Variable) o;
-        return name.equals(variable.name);
+        return name.trim().equals(variable.name.trim());
     }
 
     @Override
