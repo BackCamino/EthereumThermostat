@@ -54,12 +54,51 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         configureActivations();
         addSetterParticipantFunctions();
         initializeConfigurations();
+        initializeAttributes();
         parseChoreographyTasks();
-        parseGateways();
+        //parseGateways();
         parseEventBasedGateways();
         initializeEndEvent();
 
         return this.generateSolidityFile();
+    }
+
+    private void initializeAttributes() {
+        this.getChoreographyTasks().forEach(this::initializeAttributes);
+    }
+
+    private void initializeAttributes(ChoreographyTask task) {
+        Message message = task.getRequest().getMessage();
+        List<ValuedVariable> variables = VariablesParser.variables(message);
+        Contract targetContract = this.contracts.getContract(task.getParticipantRef());
+
+        if (isMultiInstance(task.getInitialParticipant())) {
+            //creates struct <Participant>Values
+            Struct attributesStruct = getIncomingAttributesStruct(targetContract, task.getInitialParticipant());
+            variables.stream().map(el -> new Variable(el.getName(), el.getType())).forEach(attributesStruct::addField);
+        } else {
+            variables.stream().map(el -> new Variable(el.getName(), el.getType())).forEach(targetContract::addAttribute);
+        }
+
+        if (!isExtern(task.getInitialParticipant())) {
+            Contract initialContract = this.contracts.getContract(task.getInitialParticipant());
+            List<Variable> extVariables = VariablesParser.parseExtVariables(variables);
+            extVariables.stream().map(el -> new Variable(el.getName(), el.getType())).forEach(initialContract::addAttribute);
+            EventParser.parseEvents(extVariables).forEach(initialContract::addEvent);
+            /*
+            trueValuedVariables.stream()
+                    .filter(el -> el.getValue().print().startsWith("EXT_"))
+                    .map(el -> new Variable(el.getValue().print().replaceFirst("EXT_", ""), el.getType()))
+                    .forEach(initialContract::addAttribute);
+             */
+        }
+
+        if (isExtern(task.getInitialParticipant()) || !isMultiInstance(task.getInitialParticipant())) {
+            EventParser.parseEvents(variables).forEach(targetContract::addEvent);
+        } else {
+            EventParser.parseEvents(variables, this.contracts.getContract(task.getInitialParticipant())).forEach(targetContract::addEvent);
+        }
+
     }
 
     private void initializeEndEvent() {
@@ -70,6 +109,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             Modifier isNotEndedModifier = new Modifier("isNotEnded");
             isNotEndedModifier.addStatement(new Statement("require(!isEnded, \"Ended contract\");"));
             isNotEndedModifier.addStatement(new Statement("_;"));
+            isNotEndedModifier.setComment(new Comment("Checks whether the contract is definitively ended.\nAllows the modified function to be executed only if this contract is not ended.", true));
             endEvent.addStatement(new Statement("isEnded = true;"));
             //TODO fill function with check that is a contract who calls
             contract.addAttribute(isEnded);
@@ -124,7 +164,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
         this.contracts.stream()
                 .filter(el -> multiInstanceContractsDealingWith(getParticipant(el.getName())).size() == 0)
-                .peek(el -> el.addAttribute(new Variable("activations", activationMapping, Visibility.NONE)))
+                .peek(el -> el.addAttribute(new Variable("activations", activationMapping, Visibility.PUBLIC)))
                 .peek(el -> el.addFunction(siDisable))
                 .peek(el -> el.addFunction(siEnable))
                 .forEach(el -> el.addFunction(siIsEnabled));
@@ -142,7 +182,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      * @return
      */
     private SolidityFile generateSolidityFile() {
-        SolidityFile solidityFile = new SolidityFile();
+        SolidityFile solidityFile = new SolidityFile(("Translated " + this.getModel().getModel().getModelName()).trim());
         OwnedContract ownedContract = new OwnedContract();
         solidityFile.addComponent(ownedContract);
         this.contracts.forEach(solidityFile::addComponent);
@@ -189,6 +229,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      */
     private void addIsReadyFunction(Contract contract) {
         Function function = new Function("isReady");
+        function.setComment(new Comment("Checks whether this contract is ready to start.\nThis contract is ready to start only if this contract is configured and all the related contracts to this are ready.", true));
         function.addReturned(new Variable("_isReady", new Type(Type.BaseTypes.BOOL)));
 
         //check single instance contracts
@@ -440,14 +481,27 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             //add getAssociation function
             for (Participant participant : associationStruct.getParticipants()) {
                 String decapParticipantName = decapitalize(participant.getName());
+
+                Variable associationParam = new Variable("_association", associationStruct, Variable.Location.STORAGE);
+
                 Function associationGetter = new Function("getAssociation");
                 associationGetter.setMarker(Function.Markers.VIEW);
                 associationGetter.setVisibility(Visibility.INTERNAL);
-                associationGetter.addReturned(new Variable("storage _association", associationStruct));
+                associationGetter.addReturned(associationParam);
                 associationGetter.addParameter(new Variable(decapParticipantName, new Type(capitalize(participant.getName()))));
                 associationGetter.addStatement(new Statement("return associations[getValues(_" + decapParticipantName + ").associationIndex];"));
+                associationGetter.setComment(new Comment("Retrieves an association from a given " + decapParticipantName, true));
+
+                Function associationToContract = new Function("get" + participant.getName());
+                associationToContract.setMarker(Function.Markers.VIEW);
+                associationToContract.setVisibility(Visibility.INTERNAL);
+                associationToContract.addParameter(associationParam);
+                associationToContract.addReturned(new Variable(decapParticipantName, new Type(participant.getName())));
+                associationToContract.addStatement(new Statement("return " + decapParticipantName + "Values" + "[_association." + decapParticipantName + "Index" + "]." + decapParticipantName + ";"));
+                associationToContract.setComment(new Comment("Retrieves a " + decapParticipantName + " from a given association", true));
 
                 contract.addFunction(associationGetter);
+                contract.addFunction(associationToContract);
             }
         }
     }
@@ -739,7 +793,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         return result;
     }
 
-    private void parseChoreographyTask(ChoreographyTask task) {
+    private void parseChoreographyTask_OLD(ChoreographyTask task) { //TODO !!!
         Message message = task.getRequest().getMessage();
         String hash = "" + task.getId().hashCode();
 
@@ -1118,5 +1172,203 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         }
 
         return null; //TODO
+    }
+
+    //TODO NEW PARSING
+    private void parseChoreographyTask(ChoreographyTask task) {
+        ModelElementInstanceImpl next = getNext(task);
+        Message message = task.getRequest().getMessage();
+        String hash = "" + task.getId().hashCode();
+        List<ValuedVariable> variables = VariablesParser.variables(message);
+        List<ValuedVariable> notValuedVariables = VariablesParser.parseNotValuedVariables(variables);
+        List<ValuedVariable> trueValuedVariables = VariablesParser.parseTrueValuedVariables(variables);
+        List<ValuedVariable> cleanedVariables = variables.stream().map(el -> new ValuedVariable(el.getName(), el.getType(), null)).collect(Collectors.toList());
+        Contract targetContract = this.contracts.getContract(task.getParticipantRef());
+        String messageName = FunctionParser.nameFunction(message);
+        Function setterFunction;
+
+        //////////////////////
+        /*
+        if (ChoreographyTask.isChoreographyTask(next)) {
+            System.out.println((new ChoreographyTask(next, this.getModel())).getId());
+        }
+        if (next instanceof Gateway) {
+            System.out.println(((Gateway) next).getId());
+        }
+        if (next instanceof EndEvent) {
+            System.out.println(((EndEvent) next).getId());
+        }
+         */
+        //////////////////////
+
+        if (isExtern(task.getInitialParticipant())) {   //initial is extern
+            List<Event> events = EventParser.parseEvents(message);
+            String initialName = decapitalize(VariablesParser.parseExtName(task.getInitialParticipant().getName()));
+
+            //events.forEach(targetContract::addEvent);
+
+            setterFunction = FunctionParser.parametrizedFunction(message, notValuedVariables);
+            setterFunction.addModifier(OwnedContract.onlyAddressModifier(), new Value(initialName));
+            setterFunction.setComment(new Comment("Function called by external participant " + initialName + "\nAssociated task name: " + task.getName() + "\nAssociated task id and hash: " + task.getId() + " | " + hash + "\nAssociated source message: " + message.getName() + "\nParticipants: " + task.getInitialParticipant().getName() + " -> " + task.getParticipantRef().getName(), true));
+
+            if (dealsWithMi(targetContract)) {  //deals with mi contracts
+                EnableAssociationsFor enableAssociationsFor = new EnableAssociationsFor(hash);
+
+                //TODO check next
+                enableAssociationsFor.addStatementInIf(new Comment("TODO call next"));
+
+                addAssignments(enableAssociationsFor.getFirstEnabledIf(), variables, events, null, null);
+
+                setterFunction.addStatement(new EnableAssociationsFor.IsEnabledDeclaration());
+                setterFunction.addStatement(enableAssociationsFor);
+                setterFunction.addStatement(new EnableAssociationsFor.EnabledCycleRequire());
+            } else {  //does not deal with mi contracts
+                setterFunction.addStatement(new HashEnableRequire(hash));
+                addAssignments(setterFunction, variables, events, null, null);
+                //TODO check next
+            }
+
+            //TODO check next out of for
+            targetContract.addFunction(setterFunction);
+
+        } else {    //initial is not extern
+            Contract initialContract = this.contracts.getContract(task.getInitialParticipant());
+            Function senderFunction = new Function("send_" + messageName);
+            senderFunction.setComment(new Comment("Sender function from this contract to " + targetContract.getName() + "\nAssociated task name: " + task.getName() + "\nAssociated task id and hash: " + task.getId() + " | " + hash + "\nAssociated source message: " + message.getName() + "\nParticipants: " + task.getInitialParticipant().getName() + " -> " + task.getParticipantRef().getName(), true));
+
+            setterFunction = FunctionParser.parametrizedFunction(message);
+            setterFunction.setComment(new Comment("Setter function for values given by a contract\nAssociated task name: " + task.getName() + "\nAssociated task id and hash: " + task.getId() + " | " + hash + "\nAssociated source message: " + message.getName() + "\nParticipants: " + task.getInitialParticipant().getName() + " -> " + task.getParticipantRef().getName(), true));
+
+            //sender function
+            List<ValuedVariable> externVariables = VariablesParser.parseExtValuedVariables(variables);
+            if (VariablesParser.parseExtVariables(variables).size() > 0) {  //if there are extern variables
+                Function setterExtValuesFunction = FunctionParser.parametrizedFunction("set_" + messageName, externVariables);
+                setterExtValuesFunction.setComment(new Comment("Setter function for external values\nAssociated task name: " + task.getName() + "\nAssociated task id and hash: " + task.getId() + " | " + hash + "\nAssociated source message: " + message.getName() + "\nParticipants: " + task.getInitialParticipant().getName() + " -> " + task.getParticipantRef().getName(), true));
+
+                List<Event> extVariablesEvents = EventParser.parseEvents(externVariables);
+
+                //extVariablesEvents.forEach(initialContract::addEvent);
+
+                if (dealsWithMi(initialContract)) {  //if sender deals with mi and has extern vars to send
+                    EnableAssociationsFor enableAssociationsFor = new EnableAssociationsFor(hash);
+
+                    addAssignments(enableAssociationsFor.getFirstEnabledIf(), externVariables, extVariablesEvents, null, null);
+
+                    setterExtValuesFunction.addStatement(new EnableAssociationsFor.IsEnabledDeclaration());
+                    setterExtValuesFunction.addStatement(enableAssociationsFor);
+                    setterExtValuesFunction.addStatement(new EnableAssociationsFor.EnabledCycleRequire());
+                } else { //if sender does not deal with mi and has extern vars to send
+                    setterExtValuesFunction.addStatement(new HashEnableRequire(hash));
+                    addAssignments(setterExtValuesFunction, externVariables, extVariablesEvents, null, null);
+                }
+
+                setterExtValuesFunction.addStatement(new Comment("call sender function"));
+                setterExtValuesFunction.addStatement(new Statement(senderFunction.invocation()));
+                initialContract.addFunction(setterExtValuesFunction);
+                senderFunction.setVisibility(Visibility.INTERNAL);
+            }
+
+            List<Value> sendValues = variables.stream().map(el -> el.getValue() == null ? new Value(el.getName()) : el.getValue()).collect(Collectors.toList());
+            String sendValuesString = "";
+            for (Value value : sendValues)
+                sendValuesString += value.print() + ", ";
+            if (sendValues.size() > 0) sendValuesString = sendValuesString.substring(0, sendValuesString.length() - 2);
+
+            if (isMultiInstance(task.getParticipantRef())) {  //if target is mi
+                senderFunction.addStatement(new Comment("TODO check sender (not if is internal)"));
+                EnableAssociationsFor enableAssociationsFor = new EnableAssociationsFor(hash);
+                //send
+                Statement sendStatement = new Statement("get" + targetContract.getName() + "(associations[i])." + messageName + "(" + sendValuesString + ");");
+                enableAssociationsFor.addStatementInIf(sendStatement);
+
+                senderFunction.addStatement(new EnableAssociationsFor.IsEnabledDeclaration());
+                senderFunction.addStatement(enableAssociationsFor);
+                senderFunction.addStatement(new EnableAssociationsFor.EnabledCycleRequire());
+            } else { //if target is not mi
+                String invocation = setterFunction.invocation(decapitalize(targetContract.getName()), VariablesParser.callingValues(variables));
+                senderFunction.addStatement(new Statement(invocation));
+            }
+
+            //setter function
+            if (isMultiInstance(task.getInitialParticipant())) { //if initial is mi
+                List<Event> events = EventParser.parseEvents(variables, initialContract);
+                //events.forEach(targetContract::addEvent);
+
+                setterFunction.addStatement(new Comment("TODO check enabling or if the sender is the correct contract")); //TODO
+                String senderContract = initialContract.getName() + "(msg.sender)";
+                String senderContractValues = "getValues(" + senderContract + ")";
+
+                addAssignments(setterFunction, cleanedVariables, events, senderContractValues, senderContract);
+            } else { //if initial is not mi
+                List<Event> events = EventParser.parseEvents(message);
+                setterFunction.addModifier(OwnedContract.onlyAddressModifier(), new Value("address(" + decapitalize(initialContract.getName()) + ")"));
+                setterFunction.addStatement(new Comment("TODO check enabling(?)")); //TODO
+
+                addAssignments(setterFunction, cleanedVariables, events, null, null);
+            }
+
+            initialContract.addFunction(senderFunction);
+        }
+        targetContract.addFunction(setterFunction);
+    }
+
+    private void addAssignments(StatementContainer container, List<ValuedVariable> variables, List<Event> events, String assignmentSource, String eventSource) {
+        List<ValuedVariable> notValuedVariables = VariablesParser.parseNotValuedVariables(variables);
+        List<ValuedVariable> trueValuedVariables = VariablesParser.parseTrueValuedVariables(variables);
+
+        if (notValuedVariables.size() > 0) container.addStatement(new Comment("set all received values"));
+        notValuedVariables.stream().map(el -> el.getName().startsWith("_") ? el.getName().replaceFirst("_", "") : el.getName()).map(el -> new Statement((assignmentSource == null ? "" : (assignmentSource + ".")) + el + " = _" + VariablesParser.parseExtName(el) + ";")).forEach(container::addStatement);
+        if (trueValuedVariables.size() > 0) container.addStatement(new Comment("set all predefined values"));
+        trueValuedVariables.stream().map(el -> new Statement((assignmentSource == null ? "" : (assignmentSource + ".")) + el.getName() + " = " + el.getValue().print().replaceFirst("EXT", "") + ";")).forEach(container::addStatement);
+        if (events.size() > 0) container.addStatement(new Comment("emit all changed values events"));
+        if (eventSource == null) {
+            events.stream()
+                    .map(el -> el.invocation(new Value(el.getParameters().get(0).getName().replaceFirst("_", ""))))
+                    .map(Statement::new)
+                    .forEach(container::addStatement);
+        } else {
+            events.stream()
+                    .map(el -> el.invocation(
+                            new Value(el.getParameters().get(0).getName()),
+                            new Value(eventSource)))
+                    .map(Statement::new)
+                    .forEach(container::addStatement);
+        }
+    }
+
+    private boolean isClosing(Gateway gateway) {
+        return gateway.getOutgoing().size() == 1;
+    }
+
+    private ModelElementInstanceImpl getNext(ChoreographyTask task) {
+        if (task.getOutgoing().size() > 1) throw new IllegalArgumentException();
+
+        return getNext(task.getOutgoing().stream().findFirst().orElseThrow());
+    }
+
+    private ModelElementInstanceImpl getNext(Gateway gateway) {
+        if (!isClosing(gateway)) throw new IllegalArgumentException();
+
+        return getNext(gateway.getOutgoing().stream().findFirst().orElseThrow());
+    }
+
+    private ModelElementInstanceImpl getNext(SequenceFlow flow) {
+        boolean done = false;
+        ModelElementInstanceImpl next;
+        do {
+            next = this.getModel().getModelElementById(flow.getAttributeValue("targetRef"));
+            if (next instanceof Gateway) {
+                Gateway nextGw = (Gateway) next;
+                if (!isClosing(nextGw))
+                    done = true;
+                else
+                    flow = nextGw.getOutgoing().stream().findFirst().orElseThrow();
+            } else if (ChoreographyTask.isChoreographyTask(next))
+                done = true;
+            else if (next instanceof EndEvent)
+                done = true;
+        } while (!done);
+
+        return next;
     }
 }
