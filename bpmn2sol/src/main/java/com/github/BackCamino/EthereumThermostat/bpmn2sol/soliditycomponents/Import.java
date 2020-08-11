@@ -13,6 +13,10 @@ public class Import implements SolidityComponent {
         this(path.toString());
     }
 
+    public String getPath() {
+        return path;
+    }
+
     @Override
     public String print() {
         return "import \"" + path + "\";";
