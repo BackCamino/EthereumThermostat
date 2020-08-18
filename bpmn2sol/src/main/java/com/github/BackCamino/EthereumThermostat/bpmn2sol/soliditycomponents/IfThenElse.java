@@ -8,6 +8,10 @@ public class IfThenElse extends Statement implements StatementContainer, FlowCon
     private List<Statement> thenBranch;
     private List<Statement> elseBranch;
 
+    public IfThenElse(Condition condition) {
+        this(condition, List.of(), List.of());
+    }
+
     public IfThenElse(Condition condition, List<Statement> thenBranch) {
         this(condition, thenBranch, List.of());
     }
@@ -25,6 +29,18 @@ public class IfThenElse extends Statement implements StatementContainer, FlowCon
 
     public void addElseStatement(Statement statement) {
         this.elseBranch.add(statement);
+    }
+
+    public Condition getCondition() {
+        return condition;
+    }
+
+    public List<Statement> getThenBranch() {
+        return thenBranch;
+    }
+
+    public List<Statement> getElseBranch() {
+        return elseBranch;
     }
 
     @Override

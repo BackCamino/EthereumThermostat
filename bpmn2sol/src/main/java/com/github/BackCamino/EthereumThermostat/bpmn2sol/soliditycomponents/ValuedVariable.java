@@ -19,4 +19,15 @@ public class ValuedVariable extends Variable {
     public Statement assignment() {
         return super.assignment(this.value);
     }
+
+    @Override
+    public String print() {
+        return (this.getType().print() + " "
+                + this.getVisibility().print() + " "
+                + (this.getLocation().equals(Location.NONE) ? "" : (getLocation().print() + " "))
+                + this.getName()
+                + (this.value == null ? "" : (" = " + this.value.print()))
+                + ";")
+                .replaceAll("  ", " ");
+    }
 }

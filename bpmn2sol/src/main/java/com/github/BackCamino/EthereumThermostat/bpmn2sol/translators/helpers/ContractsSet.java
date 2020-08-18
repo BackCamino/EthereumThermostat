@@ -1,5 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers;
 
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Comment;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Contract;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 
@@ -29,7 +30,11 @@ public class ContractsSet implements Set<Contract> {
     }
 
     public boolean add(Participant participant) {
-        return this.contracts.add(new Contract(participant.getName()));
+        Contract contract = new Contract(participant.getName());
+        contract.setComment(new Comment("Contract representation of the participant " + participant.getName() + " " + participant.getId() + ".\nMultiplicity (max): " +
+                (participant.getParticipantMultiplicity() == null ? 1 : participant.getParticipantMultiplicity().getMaximum()) +
+                ".", true));
+        return this.contracts.add(contract);
     }
 
     public boolean add(String name) {

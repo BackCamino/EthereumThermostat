@@ -56,7 +56,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         initializeConfigurations();
         initializeAttributes();
         parseChoreographyTasks();
-        //parseGateways();
+        parseGateways();
         parseEventBasedGateways();
         initializeEndEvent();
 
@@ -988,110 +988,164 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     }
 
     private void parseGateways() {
-        for (Gateway gateway : this.getModel().getModelElementsByType(Gateway.class)) {
+        Collection<Gateway> gateways = this.getModel().getModelElementsByType(Gateway.class).stream().filter(not(this::isClosing)).collect(Collectors.toSet());
+        for (Gateway gateway : gateways) {
             for (Contract contract : this.contracts) {
                 Function gatewayFunction = new Function(decapitalize(gateway.getId()));
-                gatewayFunction.setComment(new Comment("GATEWAY FUNCTION\nGateway hash id: " + gateway.getId().hashCode() + "\nGateway id: " + gateway.getId()));
+                gatewayFunction.setComment(new Comment("GATEWAY FUNCTION\nGateway hash id: " + gateway.getId().hashCode() + "\nGateway id: " + gateway.getId(), true));
                 Collection<SequenceFlow> outgoingFlows = gateway.getOutgoing();
                 Collection<ModelElementInstance> outgoingInstances = gateway.getOutgoing().stream().map(flow -> this.getModel().<ModelElementInstanceImpl>getModelElementById(flow.getAttributeValue("targetRef"))).collect(Collectors.toList());
+                String gatewayHash = "" + gateway.getId().hashCode();
 
+                //if gateway is conditional
                 boolean isConditional = false;
-                if (gateway instanceof ExclusiveGateway && outgoingInstances.size() > 1)
+                if (gateway instanceof ExclusiveGateway)
                     isConditional = true;
+
+                EnableAssociationsFor enableAssociationsFor = null;
+                if (dealsWithMi(contract)) {
+                    enableAssociationsFor = new EnableAssociationsFor(gatewayHash);
+                    gatewayFunction.addStatement(new EnableAssociationsFor.IsEnabledDeclaration());
+                    gatewayFunction.addStatement(enableAssociationsFor);
+                    gatewayFunction.addStatement(new EnableAssociationsFor.EnabledCycleRequire());
+                }
 
                 for (SequenceFlow flow : outgoingFlows) {
                     BinaryCondition condition;
                     IfThenElse ifConditionStatement = null;
-                    boolean isInvolved = false;
+                    boolean isInvolved = false; //if this contract is involved in condition
                     if (isConditional) {
                         condition = ConditionsParser.parseCondition(flow, contracts);
                         if (condition.getApplied().equals(contract)) {
                             isInvolved = true;
                             ifConditionStatement = new IfThenElse(parseCondition(condition, contract), List.of());
+
+                            if (dealsWithMi(contract)) enableAssociationsFor.addStatementInIf(ifConditionStatement);
+                            else gatewayFunction.addStatement(ifConditionStatement);
                         }
                     }
 
-                    if (isInvolved) gatewayFunction.addStatement(ifConditionStatement); //TODO remove line and add if
                     //TODO do nothing if is conditional and not involved
                     if (!(isConditional && !isInvolved)) {
                         Statement toAdd = null;
-                        ModelElementInstance target = this.getModel().<ModelElementInstanceImpl>getModelElementById(flow.getAttributeValue("targetRef"));
+                        //ModelElementInstance target = this.getModel().<ModelElementInstanceImpl>getModelElementById(flow.getAttributeValue("targetRef"));
+                        ModelElementInstance target = getNext(flow);
                         if (ChoreographyTask.isChoreographyTask(target)) { //TODO add enable associations after calls
                             ChoreographyTask targetTask = new ChoreographyTask((ModelElementInstanceImpl) target, this.getModel());
-                            if (targetTask.getInitialParticipant().equals(getParticipant(contract.getName()))) { //is next source
-                                //TODO
+                            if (targetTask.getInitialParticipant().equals(getParticipant(contract.getName()))) { //this is next source
                                 Collection<Variable> extVariables = VariablesParser.parseExtVariables(VariablesParser.variables(targetTask.getRequest().getMessage()));
-                                if (extVariables.size() > 0) {
-                                    if (dealsWithMi(contract)) {
-                                        EnableAssociationsFor associationsFor = new EnableAssociationsFor("" + gateway.getId().hashCode());
-                                        //toAdd = new EnableAssociationsFor("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode());
-                                        toAdd = associationsFor;
-                                        //if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
-                                        if (isInvolved) associationsFor.addStatementInIf(ifConditionStatement);
-                                        else gatewayFunction.addStatement(toAdd);
-                                    } else {
+                                if (extVariables.size() > 0) {//enable all associations to accept ext
+                                    /*
+                                    if (dealsWithMi(contract))
+                                        toAdd = new Statement("enable(" + targetTask.getId().hashCode() + ", associations[i]);");
+                                    else
                                         toAdd = new Statement("enable(" + targetTask.hashCode() + ");");
+
+                                    if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
+                                    else gatewayFunction.addStatement(toAdd);
+                                     */
+                                    if (dealsWithMi(contract)) {
+                                        toAdd = new Statement("enable(" + targetTask.getId().hashCode() + ", associations[i]);");
+                                        if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
+                                        else enableAssociationsFor.addStatementInIf(toAdd);
+                                    } else {
+                                        toAdd = new Statement("enable(" + targetTask.getId().hashCode() + ");");
                                         if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
                                         else gatewayFunction.addStatement(toAdd);
                                     }
                                 } else {
-                                    toAdd = new Statement(FunctionParser.baseFunction(targetTask.getRequest().getMessage()).invocation());
-                                    if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
-                                    else gatewayFunction.addStatement(toAdd);
+                                    Function senderFunction = FunctionParser.baseFunction(targetTask.getRequest().getMessage());
+                                    senderFunction.setName("send_" + senderFunction.getName());
+                                    toAdd = new Statement(senderFunction.invocation());
+                                    ValuedVariable conditionEnabling = new ValuedVariable("_enabled_" + senderFunction.getName(), new Type(Type.BaseTypes.BOOL), new Value("false"));
+                                    conditionEnabling.setVisibility(Visibility.NONE);
+                                    gatewayFunction.addStatement(0, new Statement(conditionEnabling.print()));
+                                    if (isInvolved) {
+                                        ifConditionStatement.addThenStatement(new Statement("enable(" + targetTask.getId().hashCode() + ", associations[i]);"));
+                                        ifConditionStatement.addThenStatement(conditionEnabling.assignment(new Value("true")));
+                                        gatewayFunction.addStatement(new IfThenElse(new Condition(conditionEnabling.getName()), List.of(toAdd)));
+                                    }
+                                    //else gatewayFunction.addStatement(toAdd);
                                 }
-                            } else if (targetTask.getParticipantRef().equals(getParticipant(contract.getName()))) { //is next target
+                            } else if (targetTask.getParticipantRef().equals(getParticipant(contract.getName()))) { //this is next target
                                 //TODO
                                 if (dealsWithMi(contract)) {
-                                    /*
-                                    toAdd = new EnableAssociationsFor("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode());
+                                    toAdd = new Statement("enable(" + targetTask.getId().hashCode() + ", associations[i]);");
                                     if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
-                                    else gatewayFunction.addStatement(toAdd);
-                                     */
-                                    EnableAssociationsFor associationsFor = new EnableAssociationsFor("" + gateway.getId().hashCode());
-                                    //toAdd = new EnableAssociationsFor("" + gateway.getId().hashCode(), "" + targetTask.getId().hashCode());
-                                    toAdd = associationsFor;
-                                    //if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
-                                    if (isInvolved) associationsFor.addStatementInIf(ifConditionStatement);
-                                    else gatewayFunction.addStatement(toAdd);
+                                    else enableAssociationsFor.addStatementInIf(toAdd);
                                 } else {
-                                    toAdd = new Statement("enable(" + targetTask.hashCode() + ");");
+                                    toAdd = new Statement("enable(" + targetTask.getId().hashCode() + ");");
                                     if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
                                     else gatewayFunction.addStatement(toAdd);
                                 }
                             }
-                        } else if (target instanceof Gateway) { //TODO statements in for (see check threshold translated)
+                        } else if (target instanceof Gateway) { //TODO to check
                             Gateway targetGateway = (Gateway) target;
-                            if (dealsWithMi(contract)) {
-                                toAdd = new EnableAssociationsFor("" + gateway.getId().hashCode(), "" + targetGateway.getId().hashCode());
-                                if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
-                                else gatewayFunction.addStatement(toAdd);
-                            } else {
-                                toAdd = new Statement(targetGateway.getId() + "();");
-                                if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
-                                else gatewayFunction.addStatement(toAdd);
-                            }
-                        } else if (target instanceof EndEvent) {
-                            if (dealsWithMi(contract)) {
-                                AssociationsFor associationsFor = new AssociationsFor();
-                                for (Contract miContract : multiInstanceContractsDealingWith(getParticipant(contract.getName()))) {
-                                    String name = decapitalize(miContract.getName());
-                                    associationsFor.addStatement(new Statement(name + "Values[associations[i]." + name + "Index]." + name + ".endEvent();"));
+                            boolean hasGateway = hasGateway(contract, targetGateway);
+
+                            if (hasGateway) {
+                                if (dealsWithMi(contract)) {
+                                    toAdd = new Statement("enable(" + targetGateway.getId().hashCode() + ", associations[i]);");
+                                    if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
+                                    else enableAssociationsFor.addStatementInIf(toAdd);
+                                } else {
+                                    toAdd = new Statement("enable(" + targetGateway.getId().hashCode() + ");");
+                                    if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
+                                    else gatewayFunction.addStatement(toAdd);
                                 }
-                                if (isInvolved) ifConditionStatement.addThenStatement(associationsFor);
-                                else gatewayFunction.addStatement(associationsFor);
                             }
+                            multiInstanceContractsDealingWith(getParticipant(contract.getName())).stream()
+                                    .filter(el -> hasGateway(el, targetGateway))
+                                    .map(Contract::getName)
+                                    .map(name -> "get" + capitalize(name) + "(associations[i])." + decapitalize(targetGateway.getId()) + "();")
+                                    .map(Statement::new)
+                                    .forEach(ifConditionStatement::addThenStatement);
+
+                            ValuedVariable conditionEnabling = new ValuedVariable("_enabled_" + decapitalize(targetGateway.getId()), new Type(Type.BaseTypes.BOOL), new Value("false"));
+                            conditionEnabling.setVisibility(Visibility.NONE);
+                            IfThenElse ifEnabled = new IfThenElse(new Condition(conditionEnabling.getName()));
+                            singleInstanceContractsDealingWith(getParticipant(contract.getName())).stream()
+                                    .filter(el -> hasGateway(el, targetGateway))
+                                    .map(Contract::getName)
+                                    .map(name -> decapitalize(name) + "." + decapitalize(targetGateway.getId()) + "();")
+                                    .map(Statement::new)
+                                    .forEach(ifEnabled::addThenStatement);
+                            if (hasGateway(contract, targetGateway))
+                                ifEnabled.addThenStatement(new Statement(decapitalize(targetGateway.getId()) + "();"));
+
+                            //if (ifEnabled.getThenBranch().size() > 0) { //TODO uncomment
+                            gatewayFunction.addStatement(0, new Statement(conditionEnabling.print()));
+                            gatewayFunction.addStatement(ifEnabled);
+                            if (isInvolved)
+                                ifConditionStatement.addThenStatement(conditionEnabling.assignment(new Value("true")));
+                            //}
+
+                        } else if (target instanceof EndEvent) {
+                            for (Contract miContract : multiInstanceContractsDealingWith(getParticipant(contract.getName()))) {
+                                String name = capitalize(miContract.getName());
+                                if (isInvolved)
+                                    ifConditionStatement.addThenStatement(new Statement("get" + name + "(associations[i]).endEvent();"));
+                            }
+
+                            ValuedVariable conditionEnabling = new ValuedVariable("_enabled_endEvent", new Type(Type.BaseTypes.BOOL), new Value("false"));
+                            conditionEnabling.setVisibility(Visibility.NONE);
+                            IfThenElse ifEnabled = new IfThenElse(new Condition(conditionEnabling.getName()));
+                            ifConditionStatement.addThenStatement(conditionEnabling.assignment(new Value("true")));
+                            gatewayFunction.addStatement(0, new Statement(conditionEnabling.print()));
+                            gatewayFunction.addStatement(ifEnabled);
                             for (Contract siContract : singleInstanceContractsDealingWith(contract)) {
                                 String name = decapitalize(siContract.getName());
                                 toAdd = new Statement(name + ".endEvent();");
-                                if (isInvolved) ifConditionStatement.addThenStatement(toAdd);
-                                else gatewayFunction.addStatement(toAdd);
+                                if (isInvolved) ifEnabled.addThenStatement(toAdd);
+                                //else gatewayFunction.addStatement(toAdd);
                             }
+                            ifEnabled.addThenStatement(new Statement("endEvent();"));
                         }
                     }
                 }
 
                 //gatewayFunction.addStatement(new Statement("//TODO"));
-                contract.addFunction(gatewayFunction);
+                if (gatewayFunction.getStatements().size() > 0) contract.addFunction(gatewayFunction);
             }
         }
     }
@@ -1103,8 +1157,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 Collection<ModelElementInstance> outgoingInstances = gateway.getOutgoing().stream().map(flow -> this.getModel().<ModelElementInstanceImpl>getModelElementById(flow.getAttributeValue("targetRef"))).collect(Collectors.toList());
                 //add notification for event based gateway. If another contract activates an event based gateway
                 if (gateway instanceof EventBasedGateway) {
-                    Function eventGwNotification = new Function("entered_" + gateway.getId());
-                    eventGwNotification.setVisibility(Visibility.EXTERNAL);
+                    Function eventGwNotification = new Function("entered_" + decapitalize(gateway.getId()));
+                    eventGwNotification.setComment(new Comment("EVENT BASED GATEWAY DEACTIVATION FUNCTION.\nThis function should be called when a task after an event based gateway is called.\nThis function deactivates all the other tasks of this contract after the gateway.\nGateway id: " + gateway.getId() + ".\n", true));
+                    eventGwNotification.setVisibility(Visibility.PUBLIC);
 
                     if (dealsWithMi(contract)) {
                         For deactivationFor = new For(
@@ -1151,10 +1206,38 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                             }
                         }
                     }
-                    contract.addFunction(eventGwNotification);
+                    if (eventGwNotification.getStatements().size() > 0) contract.addFunction(eventGwNotification);
                 }
             }
         }
+    }
+
+    private boolean hasGateway(Contract contract, Gateway gateway) {
+        if (gateway instanceof ExclusiveGateway && !isClosing(gateway)) {
+            boolean isInvolved = false;
+            for (SequenceFlow flow : gateway.getOutgoing()) {
+                BinaryCondition condition = ConditionsParser.parseCondition(flow, contracts);
+                if (condition.getApplied().equals(contract)) {
+                    isInvolved = true;
+                }
+            }
+            return isInvolved;
+        }
+
+        for (ModelElementInstanceImpl next : gateway.getOutgoing().stream().map(this::getNext).collect(Collectors.toList())) {
+            if (ChoreographyTask.isChoreographyTask(next)) {
+                ChoreographyTask nextTask = new ChoreographyTask(next, this.getModel());
+                if (contracts.getContract(nextTask.getParticipantRef()).equals(contract))
+                    return true;
+                if (!isExtern(nextTask.getInitialParticipant()) && contracts.getContract(nextTask.getInitialParticipant()).equals(contract))
+                    return true;
+            } else if (next instanceof Gateway) {
+                //TODO in base alla funzione parse gateways
+            } else if (next instanceof EndEvent) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<Statement> activations(Participant current, SequenceFlow flow) {
@@ -1177,6 +1260,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     //TODO NEW PARSING
     private void parseChoreographyTask(ChoreographyTask task) {
         ModelElementInstanceImpl next = getNext(task);
+        ModelElementInstanceImpl previous = getPrevious(task);
         Message message = task.getRequest().getMessage();
         String hash = "" + task.getId().hashCode();
         List<ValuedVariable> variables = VariablesParser.variables(message);
@@ -1211,8 +1295,26 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             setterFunction.addModifier(OwnedContract.onlyAddressModifier(), new Value(initialName));
             setterFunction.setComment(new Comment("Function called by external participant " + initialName + "\nAssociated task name: " + task.getName() + "\nAssociated task id and hash: " + task.getId() + " | " + hash + "\nAssociated source message: " + message.getName() + "\nParticipants: " + task.getInitialParticipant().getName() + " -> " + task.getParticipantRef().getName(), true));
 
+            if (previous instanceof EventBasedGateway) {
+                EventBasedGateway previousGw = (EventBasedGateway) previous;
+                singleInstanceContractsDealingWith(targetContract).stream()
+                        .filter(el -> hasGateway(el, previousGw))
+                        .map(el -> decapitalize(el.getName()) + ".entered_" + decapitalize(previousGw.getId()) + "();")
+                        .map(Statement::new)
+                        .forEach(setterFunction::addStatement);
+            }
+
             if (dealsWithMi(targetContract)) {  //deals with mi contracts
                 EnableAssociationsFor enableAssociationsFor = new EnableAssociationsFor(hash);
+
+                if (previous instanceof EventBasedGateway) {
+                    EventBasedGateway previousGw = (EventBasedGateway) previous;
+                    multiInstanceContractsDealingWith(getParticipant(targetContract.getName())).stream()
+                            .filter(el -> hasGateway(el, previousGw))
+                            .map(el -> "get" + capitalize(el.getName()) + "(associations[i]).entered_" + decapitalize(previousGw.getId()) + "();")
+                            .map(Statement::new)
+                            .forEach(enableAssociationsFor::addStatementInIf);
+                }
 
                 //TODO check next
                 enableAssociationsFor.addStatementInIf(new Comment("TODO call next"));
@@ -1227,6 +1329,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 addAssignments(setterFunction, variables, events, null, null);
                 //TODO check next
             }
+
+            if (previous instanceof EventBasedGateway)
+                setterFunction.addStatement(new Statement("entered_" + decapitalize(((EventBasedGateway) previous).getId()) + "();"));
 
             //TODO check next out of for
             targetContract.addFunction(setterFunction);
@@ -1247,12 +1352,30 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
                 List<Event> extVariablesEvents = EventParser.parseEvents(externVariables);
 
+                if (previous instanceof EventBasedGateway) {
+                    EventBasedGateway previousGw = (EventBasedGateway) previous;
+                    singleInstanceContractsDealingWith(targetContract).stream()
+                            .filter(el -> hasGateway(el, previousGw))
+                            .map(el -> decapitalize(el.getName()) + ".entered_" + decapitalize(previousGw.getId()) + "();")
+                            .map(Statement::new)
+                            .forEach(setterExtValuesFunction::addStatement);
+                }
+
                 //extVariablesEvents.forEach(initialContract::addEvent);
 
                 if (dealsWithMi(initialContract)) {  //if sender deals with mi and has extern vars to send
                     EnableAssociationsFor enableAssociationsFor = new EnableAssociationsFor(hash);
 
                     addAssignments(enableAssociationsFor.getFirstEnabledIf(), externVariables, extVariablesEvents, null, null);
+
+                    if (previous instanceof EventBasedGateway) {
+                        EventBasedGateway previousGw = (EventBasedGateway) previous;
+                        multiInstanceContractsDealingWith(getParticipant(targetContract.getName())).stream()
+                                .filter(el -> hasGateway(el, previousGw))
+                                .map(el -> "get" + capitalize(el.getName()) + "(associations[i]).entered_" + decapitalize(previousGw.getId()) + "();")
+                                .map(Statement::new)
+                                .forEach(enableAssociationsFor::addStatementInIf);
+                    }
 
                     setterExtValuesFunction.addStatement(new EnableAssociationsFor.IsEnabledDeclaration());
                     setterExtValuesFunction.addStatement(enableAssociationsFor);
@@ -1261,6 +1384,9 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     setterExtValuesFunction.addStatement(new HashEnableRequire(hash));
                     addAssignments(setterExtValuesFunction, externVariables, extVariablesEvents, null, null);
                 }
+
+                if (previous instanceof EventBasedGateway)
+                    setterExtValuesFunction.addStatement(new Statement("entered_" + decapitalize(((EventBasedGateway) previous).getId()) + "();"));
 
                 setterExtValuesFunction.addStatement(new Comment("call sender function"));
                 setterExtValuesFunction.addStatement(new Statement(senderFunction.invocation()));
@@ -1370,5 +1496,15 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         } while (!done);
 
         return next;
+    }
+
+    private ModelElementInstanceImpl getPrevious(ChoreographyTask task) {
+        if (task.getIncoming().size() != 1) throw new IllegalArgumentException();
+
+        return this.getModel().getModelElementById(
+                task.getIncoming().stream()
+                        .findAny().orElseThrow()
+                        .getAttributeValue("sourceRef")
+        );
     }
 }
