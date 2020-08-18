@@ -50,6 +50,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     public SolidityFile translate() {
         initializeContracts();
         initializeCommunicatingContractsAttributes();
+        addStartFunction();
         addIsReadyFunction();
         configureActivations();
         addSetterParticipantFunctions();
@@ -59,6 +60,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
         parseGateways();
         parseEventBasedGateways();
         initializeEndEvent();
+        addIsReadyInvocationInConstructor();
 
         return this.generateSolidityFile();
     }
@@ -248,8 +250,81 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 ))
                 .forEach(function::addStatement);
 
+        function.addStatement(new Statement("start();"));
         function.addStatement(new Statement("return true;"));
         contract.addFunction(function);
+    }
+
+    private void addIsReadyInvocationInConstructor() {
+        for (Contract contract : contracts) {
+            Constructor constructor;
+            if (contract.getConstructor() == null)
+                constructor = new Constructor(contract.getName());
+            else
+                constructor = contract.getConstructor();
+
+            constructor.addStatement(new Comment("Start if is ready"));
+            constructor.addStatement(new Statement("isReady();"));
+
+            contract.setConstructor(constructor);
+        }
+    }
+
+    private void addStartFunction() {
+        ValuedVariable isStarted = new ValuedVariable("isStarted", new Type(Type.BaseTypes.BOOL), new Value("false"));
+        ModelElementInstanceImpl firstElement = getModel().getModelElementById(
+                getModel().getModelElementsByType(StartEvent.class).stream().findAny().orElseThrow()
+                        .getOutgoing().stream().findAny().orElseThrow()
+                        .getAttributeValue("targetRef")
+        );
+
+        for (Contract contract : contracts) {
+            Function startFunction = new Function("start");
+            startFunction.setVisibility(Visibility.INTERNAL);
+            IfThenElse ifIsStarted = new IfThenElse(new Condition(isStarted.getName() + " == false"));
+
+            if (ChoreographyTask.isChoreographyTask(firstElement)) {
+                ChoreographyTask firstTask = new ChoreographyTask(firstElement, getModel());
+                if (firstTask.getParticipantRef().getName().equals(contract.getName())) { //is target
+                    //if(isExtern(firstTask.getInitialParticipant())){ //initial is extern
+                    if (dealsWithMi(contract)) {
+                        AssociationsFor associationsFor = new AssociationsFor();
+                        Statement enableStatement = new Statement("enable(" + firstTask.getId().hashCode() + ", associations[i]);");
+                        associationsFor.addStatement(enableStatement);
+                        ifIsStarted.addThenStatement(associationsFor);
+                    } else {
+                        Statement enableStatement = new Statement("enable(" + firstTask.getId().hashCode() + ");");
+                        ifIsStarted.addThenStatement(enableStatement);
+                    }
+                } else if (firstTask.getParticipantRef().getName().equals(contract.getName())) { //is source
+                    boolean hasExternValues = VariablesParser.parseExtVariables(VariablesParser.variables(firstTask.getRequest().getMessage())).size() == 0;
+
+                    if (dealsWithMi(contract)) {
+                        AssociationsFor associationsFor = new AssociationsFor();
+                        Statement enableStatement = new Statement("enable(" + firstTask.getId().hashCode() + ", associations[i]);");
+                        associationsFor.addStatement(enableStatement);
+                        ifIsStarted.addThenStatement(associationsFor);
+                    } else {
+                        Statement enableStatement = new Statement("enable(" + firstTask.getId().hashCode() + ");");
+                        ifIsStarted.addThenStatement(enableStatement);
+                    }
+
+                    if (!hasExternValues) {
+                        ifIsStarted.addThenStatement(new Statement("send_" + FunctionParser.nameFunction(firstTask.getRequest().getMessage()) + "();"));
+                    }
+                }
+            } else if (firstElement instanceof Gateway) {
+                Gateway firstGateway = (Gateway) firstElement;
+                if (hasGateway(contract, firstGateway)) {
+                    //TODO
+                }
+            }
+
+            ifIsStarted.addThenStatement(isStarted.assignment(new Value("true")));
+            startFunction.addStatement(ifIsStarted);
+            contract.addAttribute(isStarted);
+            contract.addFunction(startFunction);
+        }
     }
 
     /**
