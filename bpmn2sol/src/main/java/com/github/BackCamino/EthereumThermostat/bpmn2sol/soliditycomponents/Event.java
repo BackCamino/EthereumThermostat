@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 public class Event implements SolidityComponent, Invokable {
     private List<Variable> parameters;
     private String name;
+    private Comment comment;
 
     public Event(String name, List<Variable> parameters) {
         this.name = name;
@@ -35,8 +36,15 @@ public class Event implements SolidityComponent, Invokable {
         this.parameters.add(parameter);
     }
 
-    @Override
-    public String print() {
+    public Comment getComment() {
+        return comment;
+    }
+
+    public void setComment(Comment comment) {
+        this.comment = comment;
+    }
+
+    protected String declaration() {
         StringBuilder toPrint = new StringBuilder("event " + this.name + "(");
         this.parameters.forEach(el -> toPrint.append(el.getType().print() + " " + el.getName() + ", "));
         if (this.parameters.size() > 0)
@@ -44,6 +52,19 @@ public class Event implements SolidityComponent, Invokable {
         toPrint.append(");");
 
         return toPrint.toString();
+    }
+
+    @Override
+    public String print() {
+        String toPrint = declaration();
+        if (this.comment != null) {
+            if (this.comment.isSingleLine())
+                toPrint = toPrint + "\t" + this.comment.print();
+            else
+                toPrint = this.comment.print() + "\n" + toPrint;
+        }
+
+        return toPrint;
     }
 
     @Override

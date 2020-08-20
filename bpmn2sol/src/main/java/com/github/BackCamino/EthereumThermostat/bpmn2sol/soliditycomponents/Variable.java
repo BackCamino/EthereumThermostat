@@ -18,6 +18,7 @@ public class Variable implements SolidityComponent {
     private String name;
     private Type type;
     private Visibility visibility;
+    private Comment comment;
 
     public Variable(String name, Type type, Visibility visibility, Location location) {
         Objects.requireNonNull(name);
@@ -71,8 +72,28 @@ public class Variable implements SolidityComponent {
         return this.location;
     }
 
+    public Comment getComment() {
+        return comment;
+    }
+
+    public void setComment(Comment comment) {
+        this.comment = comment;
+    }
+
     @Override
     public String print() {
+        String toPrint = declaration();
+        if (this.comment != null) {
+            if (this.comment.isSingleLine())
+                toPrint = toPrint + "\t" + this.comment.print();
+            else
+                toPrint = this.comment.print() + "\n" + toPrint;
+        }
+
+        return toPrint;
+    }
+
+    protected String declaration() {
         return (this.type.print() + " "
                 + this.visibility.print() + " "
                 + (this.location.equals(Location.NONE) ? "" : (location.print() + " "))

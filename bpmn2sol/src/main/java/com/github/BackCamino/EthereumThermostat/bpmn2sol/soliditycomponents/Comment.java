@@ -41,6 +41,15 @@ public class Comment extends Statement {
         this.append("\n" + comment);
     }
 
+    public boolean isSingleLine() {
+        return !this.comment.contains("\n") && !isDocumentation();
+    }
+
+    public void transformInSingleLine() {
+        this.documentation = false;
+        this.comment = this.comment.replace("\n", " ");
+    }
+
     @Override
     public String print() {
         if (this.documentation)

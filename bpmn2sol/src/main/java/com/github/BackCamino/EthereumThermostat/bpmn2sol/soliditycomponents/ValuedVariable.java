@@ -21,7 +21,7 @@ public class ValuedVariable extends Variable {
     }
 
     @Override
-    public String print() {
+    public String declaration() {
         return (this.getType().print() + " "
                 + this.getVisibility().print() + " "
                 + (this.getLocation().equals(Location.NONE) ? "" : (getLocation().print() + " "))
