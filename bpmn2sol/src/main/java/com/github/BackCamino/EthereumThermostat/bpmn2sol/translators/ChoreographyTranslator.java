@@ -1,11 +1,15 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.bpmnelements.ChoreographyTask;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Condition;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Event;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.*;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.AssociationStruct;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.AssociationsFor;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.EnableAssociationsFor;
+import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.HashEnableRequire;
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers.*;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.Condition;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.Event;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
+import com.github.EmmanueleBollino.solcraft.standardizedcomponents.OwnedContract;
 import com.sun.tools.javac.Main;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.*;
@@ -1167,7 +1171,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 if (!isExtern(nextTask.getInitialParticipant()) && contracts.getContract(nextTask.getInitialParticipant()).equals(contract))
                     return true;
             } else if (next instanceof Gateway) {
-                //TODO in base alla funzione parse gateways
+                //TODO relating to function parse gateways
             } else if (next instanceof EndEvent) {
                 return true;
             }

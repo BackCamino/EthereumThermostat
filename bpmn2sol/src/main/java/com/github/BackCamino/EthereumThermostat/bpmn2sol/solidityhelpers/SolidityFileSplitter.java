@@ -1,7 +1,7 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.solidityhelpers;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Enum;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.Enum;
 
 import java.util.Collection;
 import java.util.LinkedList;

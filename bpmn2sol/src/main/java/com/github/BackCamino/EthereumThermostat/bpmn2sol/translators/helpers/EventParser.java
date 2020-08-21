@@ -1,9 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Contract;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Event;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Type;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Variable;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.camunda.bpm.model.bpmn.instance.Message;
 
 import java.util.List;

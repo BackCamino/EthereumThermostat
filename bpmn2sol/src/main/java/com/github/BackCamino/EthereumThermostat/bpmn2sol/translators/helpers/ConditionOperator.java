@@ -1,6 +1,7 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Contract;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
+
 public class ConditionOperator {
     public ConditionOperator(Contract contract, String value) {
         this.contract = contract;

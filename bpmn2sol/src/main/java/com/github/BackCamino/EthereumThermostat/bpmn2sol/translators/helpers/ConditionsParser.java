@@ -1,6 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Contract;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.camunda.bpm.model.bpmn.instance.SequenceFlow;
 
 import java.util.Collection;

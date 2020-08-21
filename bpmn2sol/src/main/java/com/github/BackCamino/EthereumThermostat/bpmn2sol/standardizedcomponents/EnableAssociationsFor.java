@@ -1,9 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Condition;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.IfThenElse;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Require;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Statement;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 
 import java.util.List;
 

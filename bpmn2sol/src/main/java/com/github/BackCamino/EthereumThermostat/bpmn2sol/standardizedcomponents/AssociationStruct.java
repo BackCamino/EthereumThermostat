@@ -1,8 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Struct;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Type;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Variable;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 
 import java.util.LinkedList;

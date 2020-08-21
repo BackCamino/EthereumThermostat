@@ -1,4 +1,4 @@
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

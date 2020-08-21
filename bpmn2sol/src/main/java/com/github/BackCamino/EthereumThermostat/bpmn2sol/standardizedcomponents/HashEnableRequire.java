@@ -1,7 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Condition;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Require;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 
 public class HashEnableRequire extends Require {
     private String id;
