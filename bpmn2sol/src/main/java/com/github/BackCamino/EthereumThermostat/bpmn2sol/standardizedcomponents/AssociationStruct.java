@@ -1,6 +1,9 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents;
 
-import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.Comment;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.Struct;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.Type;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.Variable;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 
 import java.util.LinkedList;
@@ -23,6 +26,7 @@ public class AssociationStruct extends Struct {
     public void addParticipant(Participant participant) {
         if (!participants.contains(participant)) participants.add(participant);
         Variable field = new Variable(decapitalize(participant.getName() + "Index"), new Type(BaseTypes.UINT));
+        field.setComment(new Comment("index of the participant " + participant.getName() + " in the association"));
         this.addField(field);
     }
 

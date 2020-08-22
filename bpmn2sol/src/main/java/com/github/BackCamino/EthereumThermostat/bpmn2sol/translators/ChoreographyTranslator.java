@@ -151,35 +151,52 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 Function.Markers.VIEW
         );
         Function siEnable = new Function("enable");
+        siEnable.setComment(new Comment("Enables a task id in this contract", true));
+        Event siEnableEvent = new Event("enabled", List.of(new Variable("enabledId", new Type(Type.BaseTypes.INT), Visibility.NONE)));
+        siEnableEvent.setComment(new Comment("event emitted when a task is enabled"));
         siEnable.setVisibility(Visibility.INTERNAL);
         siEnable.addParameter(idVariable);
         siEnable.addStatement(new Statement("activations[_id] = true;"));
+        siEnable.addStatement(new Statement(siEnableEvent.invocation(new Value("_id"))));
+
         Function siDisable = new Function("disable");
+        Event siDisableEvent = new Event("disabled", List.of(new Variable("disabledId", new Type(Type.BaseTypes.INT), Visibility.NONE)));
         siDisable.setVisibility(Visibility.INTERNAL);
         siDisable.addParameter(idVariable);
         siDisable.addStatement(new Statement("activations[_id] = false;"));
+        siDisable.addStatement(new Statement(siDisableEvent.invocation(new Value("_id"))));
+
         Function miEnable = new Function("enable");
+        Event miEnableEvent = new Event("enabled", List.of(new Variable("enabledId", new Type(Type.BaseTypes.INT), Visibility.NONE), new Variable("idAssociation", new Type(Type.BaseTypes.UINT))));
         miEnable.setVisibility(Visibility.INTERNAL);
         miEnable.addParameter(idVariable);
         miEnable.addParameter(associationVariable);
         miEnable.addStatement(new Statement("_association.activations[_id] = true;"));
+        miEnable.addStatement(new Statement(miEnableEvent.invocation(new Value("_id"), new Value("_association.id"))));
+
         Function miDisable = new Function("disable");
+        Event miDisableEvent = new Event("disabled", List.of(new Variable("disabledId", new Type(Type.BaseTypes.INT), Visibility.NONE), new Variable("idAssociation", new Type(Type.BaseTypes.UINT))));
         miDisable.setVisibility(Visibility.INTERNAL);
         miDisable.addParameter(idVariable);
         miDisable.addParameter(associationVariable);
         miDisable.addStatement(new Statement("_association.activations[_id] = false;"));
+        miDisable.addStatement(new Statement(miDisableEvent.invocation(new Value("_id"), new Value("_association.id"))));
 
         this.contracts.stream()
                 .filter(el -> multiInstanceContractsDealingWith(getParticipant(el.getName())).size() == 0)
                 .peek(el -> el.addAttribute(new Variable("activations", activationMapping, Visibility.PUBLIC)))
-                .peek(el -> el.addFunction(siDisable))
                 .peek(el -> el.addFunction(siEnable))
+                .peek(el -> el.addFunction(siDisable))
+                .peek(el -> el.addEvent(siEnableEvent))
+                .peek(el -> el.addEvent(siDisableEvent))
                 .forEach(el -> el.addFunction(siIsEnabled));
 
         this.contracts.stream()
                 .filter(el -> multiInstanceContractsDealingWith(getParticipant(el.getName())).size() > 0)
-                .peek(el -> el.addFunction(miDisable))
                 .peek(el -> el.addFunction(miEnable))
+                .peek(el -> el.addFunction(miDisable))
+                .peek(el -> el.addEvent(miEnableEvent))
+                .peek(el -> el.addEvent(miDisableEvent))
                 .forEach(el -> el.addFunction(miIsEnabled));
     }
 
@@ -525,7 +542,12 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
         //create association struct
         AssociationStruct associationStruct = new AssociationStruct(participants);
-        associationStruct.addField(new Variable("activations", new Mapping(new Type(Type.BaseTypes.INT), new Type(Type.BaseTypes.BOOL)), Visibility.NONE));
+        Variable idVariable = new Variable("id", new Type(Type.BaseTypes.UINT), Visibility.NONE);
+        idVariable.setComment(new Comment("id of the association, it isn't always the index of the associations array"));
+        associationStruct.addField(idVariable);
+        Variable activationsVariable = new Variable("activations", new Mapping(new Type(Type.BaseTypes.INT), new Type(Type.BaseTypes.BOOL)), Visibility.NONE);
+        activationsVariable.setComment(new Comment("activation states associated to this association"));
+        associationStruct.addField(activationsVariable);
 
         //create association struct array
         Variable associationsArray = new Variable("associations", new Array(associationStruct, associationCouples.length));
@@ -554,7 +576,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                     .map(el -> el + ", ")
                     .forEach(statementString::append);
             statementString.setLength(statementString.length() - 2);
-            statementString.append(");");
+            statementString.append(", " + i + ");");
             assignmentStatements.add(new Statement(statementString.toString()));
 
             //add assignment in <participant>Values (<participant>Values[<participantIndex>.associationIndex] = <associationIndex>;
