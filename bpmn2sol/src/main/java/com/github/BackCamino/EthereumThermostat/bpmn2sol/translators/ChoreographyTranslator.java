@@ -206,12 +206,32 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      * @return
      */
     private SolidityFile generateSolidityFile() {
-        SolidityFile solidityFile = new SolidityFile(("Translated " + this.getModel().getModel().getModelName()).trim());
+        SolidityFile solidityFile = new SolidityFile(("Translated_" + this.getModel().getModel().getModelName()).trim().replace(" ", "_"));
+        solidityFile.addComponent(fileInfoComment());
         OwnedContract ownedContract = new OwnedContract();
         solidityFile.addComponent(ownedContract);
         this.contracts.forEach(solidityFile::addComponent);
 
         return solidityFile;
+    }
+
+    private Comment fileInfoComment() {
+        StringBuilder commentString = new StringBuilder("Solidity file translated with a BPMN choreography translator\n\n");
+        commentString.append("List of all element codes\n");
+        getChoreographyTasks().stream()
+                .map(el -> "Choreography task | Name: " + el.getName() + " - Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+        this.getModel().getModelElementsByType(Gateway.class).stream()
+                .map(el -> "Gateway | Type: " + (el instanceof ExclusiveGateway ? "Exclusive" : (el instanceof ParallelGateway ? "Parallel" : (el instanceof EventBasedGateway ? "Event based" : "Other"))) + (isClosing(el) ? " Closed" : " Open") + " - Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+        this.getModel().getModelElementsByType(StartEvent.class).stream()
+                .map(el -> "Start event | Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+        this.getModel().getModelElementsByType(EndEvent.class).stream()
+                .map(el -> "End event | Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+
+        return new Comment(commentString.toString());
     }
 
     /**
