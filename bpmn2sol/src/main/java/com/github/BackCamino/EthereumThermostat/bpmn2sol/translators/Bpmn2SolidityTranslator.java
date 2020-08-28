@@ -1,6 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.SolidityFile;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.SolidityFile;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 

@@ -2,6 +2,9 @@
   <dictionary name="emman">
     <words>
       <w>bpmn</w>
+      <w>calldata</w>
+      <w>decap</w>
+      <w>uint</w>
     </words>
   </dictionary>
 </component>

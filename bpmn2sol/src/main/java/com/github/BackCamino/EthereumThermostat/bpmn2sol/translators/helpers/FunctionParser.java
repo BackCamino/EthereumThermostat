@@ -1,8 +1,6 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Function;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Statement;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.ValuedVariable;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.camunda.bpm.model.bpmn.instance.Message;
 
 import java.util.List;
@@ -22,6 +20,10 @@ public class FunctionParser {
         return parametrizedFunction(nameFunction(message), variables(message));
     }
 
+    public static Function parametrizedFunction(Message message, List<ValuedVariable> parameters) {
+        return parametrizedFunction(nameFunction(message), parameters);
+    }
+
     public static Function parametrizedFunction(String name, List<ValuedVariable> parameters) {
         Function function = new Function(name);
         //add attributes
@@ -31,7 +33,7 @@ public class FunctionParser {
 
         return function;
     }
-    
+
     public static Function setterFunction(Message message) {
         return setterFunction(nameFunction(message), variables(message));
     }

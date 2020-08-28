@@ -1,5 +1,5 @@
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.standardizedcomponents.OwnedContract;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
+import com.github.EmmanueleBollino.solcraft.standardizedcomponents.OwnedContract;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

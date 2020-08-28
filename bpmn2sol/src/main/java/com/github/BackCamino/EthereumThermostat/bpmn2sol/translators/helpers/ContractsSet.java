@@ -1,16 +1,16 @@
 package com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.helpers;
 
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.Contract;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.camunda.bpm.model.bpmn.instance.Participant;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 
 public class ContractsSet implements Set<Contract> {
-    private Set<Contract> contracts = new HashSet<>();
+    private Set<Contract> contracts = new LinkedHashSet<>();
 
     public Contract getContract(Participant participant) {
         return this.getContract(el -> el.getName().equals(participant.getName()));
@@ -29,7 +29,11 @@ public class ContractsSet implements Set<Contract> {
     }
 
     public boolean add(Participant participant) {
-        return this.contracts.add(new Contract(participant.getName()));
+        Contract contract = new Contract(participant.getName());
+        contract.setComment(new Comment("Contract representation of the participant " + participant.getName() + " " + participant.getId() + ".\nMultiplicity (max): " +
+                (participant.getParticipantMultiplicity() == null ? 1 : participant.getParticipantMultiplicity().getMaximum()) +
+                ".", true));
+        return this.contracts.add(contract);
     }
 
     public boolean add(String name) {

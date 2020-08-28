@@ -1,21 +1,21 @@
-import com.github.BackCamino.EthereumThermostat.bpmn2sol.soliditycomponents.*;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SolidityFileTest {
     @Test
     void basicFileTest() {
-        SolidityFile sf = new SolidityFile();
+        SolidityFile sf = new SolidityFile("File");
         System.out.println(sf.print());
         assertEquals("// SPDX-License-Identifier: UNLICENSED\npragma SOLIDITY ^0.6.10;", sf.print());
     }
 
     @Test
     void complexFileTest() {
-        SolidityFile sf = new SolidityFile();
+        SolidityFile sf = new SolidityFile("Contract");
         Contract c = new Contract("Contract");
         c.addAttribute(new Variable("variable1", new Type(Type.BaseTypes.INT)));
         c.addAttribute(new Variable("v2", new Type("type1")));
