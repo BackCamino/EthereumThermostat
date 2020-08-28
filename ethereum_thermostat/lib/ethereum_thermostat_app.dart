@@ -22,7 +22,7 @@ class EthereumThermostatApp extends StatefulWidget {
 class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
   static final _navigatorKey = GlobalKey<NavigatorState>();
 
-  final web3Client = Web3Client(Config.nodeAddress, Client());
+  final web3WalletClient = Web3Client(Config.nodeAddress, Client());
   final web3Eth = Web3Client(Config.nodeAddress, Client(), socketConnector: () {
     return IOWebSocketChannel.connect(Config.nodeWwsAddress).cast<String>();
   });
@@ -49,7 +49,7 @@ class _EthereumThermostatAppState extends State<EthereumThermostatApp> {
           create: (_) => AppModel(navigatorKey: _navigatorKey),
         ),
         ChangeNotifierProvider<WalletModel>(
-          create: (_) => WalletModel(web3Client, _navigatorKey),
+          create: (_) => WalletModel(web3WalletClient, _navigatorKey),
         ),
         ChangeNotifierProvider<ThermostatContract>(
           create: (_) => ThermostatContract(web3Eth),

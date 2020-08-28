@@ -1,5 +1,6 @@
 import 'package:ethereumthermostat/utils/prefs_util.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:web3dart/web3dart.dart';
 
 class WalletModel with ChangeNotifier {
@@ -10,8 +11,10 @@ class WalletModel with ChangeNotifier {
   bool _initialized;
   GlobalKey<NavigatorState> _navigatorKey;
 
+  var logger = Logger();
+
   WalletModel(Web3Client web3client, GlobalKey<NavigatorState> navigatorKey) {
-    _initialized = false;
+    setInitialized = false;
     _navigatorKey = navigatorKey;
     _init(web3client);
   }
@@ -28,6 +31,11 @@ class WalletModel with ChangeNotifier {
 
   set setEthAddress(EthereumAddress ethereumAddress) {
     _ethAddress = ethereumAddress;
+    notifyListeners();
+  }
+
+  set setInitialized(bool initialized) {
+    _initialized = initialized;
     notifyListeners();
   }
 
@@ -54,26 +62,25 @@ class WalletModel with ChangeNotifier {
       if(_hexAddress != null && _hexAddress.isNotEmpty) {
         setCredentials = await _web3client.credentialsFromPrivateKey(hexAddress);
         setEthAddress = await _credentials.extractAddress();
-        _initialized = true;
-
-        notifyListeners();
+        print(ethAddress);
+        setInitialized = true;
 
         _navigatorKey.currentState.pushReplacementNamed('/AuthPage');
       } else {
-        print('Key not setted');
+        logger.w('Wallet key not setted');
       }
     }
     catch (e) {
-      print('Error while read key : $e');
+      logger.e('Error while read wallet key : ' + e.toString());
     }
   }
 
   void removeWallet() {
-    _initialized = false;
+    setInitialized = false;
     setHexAddress = null;
     setCredentials = null;
     setEthAddress = null;
-    notifyListeners();
+    logger.i('Wallet removed successfully');
   }
 
 }

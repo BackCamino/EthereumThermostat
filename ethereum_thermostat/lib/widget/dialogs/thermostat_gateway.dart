@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
-
 import 'package:ethereumthermostat/models/gateway_heaters.dart';
 import 'package:ethereumthermostat/models/gateway_sensors.dart';
 import 'package:flutter/cupertino.dart';
@@ -151,9 +149,12 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
                   shrinkWrap: true,
                   itemCount: results.length,
                   itemBuilder: (context, index) {
-                    return GatewayDeviceTile(
-                      device: results.toList()[index].device,
-                    );
+                    if(results.toList()[index].device.address != null) {
+                      return GatewayDeviceTile(
+                        device: results.toList()[index].device,
+                      );
+                    }
+                    return Container();
                   })
             ],
           );
@@ -228,9 +229,22 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
                     shrinkWrap: true,
                     itemCount: results.length,
                     itemBuilder: (context, index) {
-                      return GatewayDeviceTile(
-                        device: results.toList()[index].device,
-                      );
+                      if(results.toList()[index].device.address != null) {
+                        if(gatewaySensors.device != null) {
+                          if(results.toList()[index].device.address != gatewaySensors.deviceAddress) {
+                            return GatewayDeviceTile(
+                              device: results.toList()[index].device,
+                            );
+                          }
+                        } else {
+                          if(results.toList()[index].device.address != gatewayHeaters.deviceAddress)  {
+                            return GatewayDeviceTile(
+                              device: results.toList()[index].device,
+                            );
+                          }
+                        }
+                      }
+                      return Container();
                     })
               ]);
         }

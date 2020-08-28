@@ -14,67 +14,72 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ThermostatControllerModel>(
-          create: (_) => ThermostatControllerModel(currentThreshold: 20, preCent: 0.32),
-        ),
-        ChangeNotifierProvider<BottomNavModel>(
-          create: (_) => BottomNavModel(currentTabIndex: 0),
-        )
-      ],
-      child: Consumer<WalletModel>(
-        builder: (context, wallet, child) {
-          if(wallet != null && wallet.initialized) {
-            return Consumer<BottomNavModel>(
-              builder: (context, bottomBar, child) {
-                return Container(
-                    color: ThermostatAppTheme.background,
-                    child: Scaffold(
-                      backgroundColor: Colors.transparent,
-                      body: getPage(),
-                      bottomNavigationBar: CustomBottomBar(
-                        items: [
-                          BottomNavigationDotBarItem(
-                              icon: Icons.rss_feed, onTap: () {bottomBar.changeCurrentTabIndex(0);}),
-                          BottomNavigationDotBarItem(
-                              icon: Icons.graphic_eq, onTap: () {bottomBar.changeCurrentTabIndex(1);}),
-                          BottomNavigationDotBarItem(icon: Icons.settings, onTap: () {bottomBar.changeCurrentTabIndex(2);})
-                        ],
-                      ),
-                    )
-                );
-              },
-            );
-          }
-          else {
-            return Container(
-                color: ThermostatAppTheme.background,
-                child: Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Text('No wallet configurated'),
-                          IconButton(
-                            icon: Icon(Icons.add_circle_outline),
-                            onPressed: () => Provider.of<AppModel>(context, listen: false).navigatorKey.currentState.pushReplacementNamed('/WalletConfigPage'),
-                          )
-                        ],
-                      )
-                  ),
-                )
-            );
-          }
-        }
-      ),
-    );
+    return Consumer<WalletModel>(builder: (context, wallet, child) {
+      if (wallet.initialized) {
+        return MultiProvider(
+            providers: [
+              ChangeNotifierProvider<ThermostatControllerModel>(
+                create: (_) => ThermostatControllerModel(
+                    currentThreshold: 20, preCent: 0.32),
+              ),
+              ChangeNotifierProvider<BottomNavModel>(
+                create: (_) => BottomNavModel(currentTabIndex: 0),
+              )
+            ],
+            child:
+                Consumer<BottomNavModel>(builder: (context, bottomBar, child) {
+              return Container(
+                  color: ThermostatAppTheme.background,
+                  child: Scaffold(
+                    backgroundColor: Colors.transparent,
+                    body: getPage(),
+                    bottomNavigationBar: CustomBottomBar(
+                      items: [
+                        BottomNavigationDotBarItem(
+                            icon: Icons.rss_feed,
+                            onTap: () {
+                              bottomBar.changeCurrentTabIndex(0);
+                            }),
+                        BottomNavigationDotBarItem(
+                            icon: Icons.graphic_eq,
+                            onTap: () {
+                              bottomBar.changeCurrentTabIndex(1);
+                            }),
+                        BottomNavigationDotBarItem(
+                            icon: Icons.settings,
+                            onTap: () {
+                              bottomBar.changeCurrentTabIndex(2);
+                            })
+                      ],
+                    ),
+                  ));
+            }));
+      } else {
+        return Container(
+            color: ThermostatAppTheme.background,
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(
+                  child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text('No wallet configurated'),
+                  IconButton(
+                    icon: Icon(Icons.add_circle_outline),
+                    onPressed: () =>
+                        Provider.of<AppModel>(context, listen: false)
+                            .navigatorKey
+                            .currentState
+                            .pushReplacementNamed('/WalletConfigPage'),
+                  )
+                ],
+              )),
+            ));
+      }
+    });
   }
-
 
   Widget getPage() {
     return Consumer<BottomNavModel>(
