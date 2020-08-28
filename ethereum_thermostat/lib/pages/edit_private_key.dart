@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class EditPrivateKey extends StatefulWidget {
+
   @override
   _EditPrivateKeyState createState() => _EditPrivateKeyState();
 }
@@ -62,10 +63,10 @@ class _EditPrivateKeyState extends State<EditPrivateKey> {
   }
 
   Future<void> setUpKey() async {
-    final keyString = _keyTextEditingController.text;
+    final keyValue = _keyTextEditingController.text;
 
-    if(keyString != '' && keyString.isNotEmpty) {
-      PreferencesUtil().setPrefsString('address_key', keyString);
+    if(keyValue != null && keyValue.isNotEmpty) {
+      PreferencesUtil().setPrefsString('address_key', keyValue);
       Provider.of<WalletModel>(context, listen: false).setAddress();
       Provider.of<AppModel>(context, listen: false).navigatorKey.currentState.pushReplacementNamed('/HomePage');
     }

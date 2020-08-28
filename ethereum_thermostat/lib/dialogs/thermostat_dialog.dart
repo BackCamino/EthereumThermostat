@@ -1,4 +1,5 @@
 import 'package:ethereumthermostat/models/thermostat.dart';
+import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:ethereumthermostat/widget/dialogs/thermostat_info.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,6 +13,7 @@ class ThermostatDialog extends StatefulWidget {
 
 class _ThermostatDialogState extends State<ThermostatDialog>
     with TickerProviderStateMixin {
+
   AnimationController animationController;
   bool barrierDismissible = true;
 
@@ -36,8 +38,7 @@ class _ThermostatDialogState extends State<ThermostatDialog>
               child: SingleChildScrollView(
                 child: Consumer<ThermostatContract>(
                     builder: (context,thermostat, child) {
-                      if (thermostat != null &&
-                          thermostat.initialized) {
+                      if (thermostat.initialized) {
                         return Column(
                           children: <Widget>[
                             ThermostatInfo(
@@ -46,59 +47,109 @@ class _ThermostatDialogState extends State<ThermostatDialog>
                             const Divider(
                               height: 1,
                             ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 16, right: 16, bottom: 16, top: 8),
+                              child: Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.6),
+                                      blurRadius: 8,
+                                      offset: const Offset(4, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                                    highlightColor: Colors.transparent,
+                                    onTap: () {
+                                      thermostat.removeThermostat();
+                                      Navigator.pop(context);
+                                    },
+                                    child: Center(
+                                      child: Text(
+                                        'Remove thermostat',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 18,
+                                            color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
                           ],
                         );
                       }  else {
-                        return Center(
-                            child: Text(
-                              'Thermostat not configured',
-                              style: ThermostatAppTheme.title,
+                        return Padding(
+                          padding: EdgeInsets.all(20.0),
+                            child: Column(
+                              children: <Widget>[
+                                Text(
+                                  'Thermostat not configured',
+                                  style: ThermostatAppTheme.title,
+                                ),
+                                SizedBox(
+                                  height: 100,
+                                ),
+                                thermostat.processing ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(),
+                                    SizedBox(height: 20,),
+                                    Text(thermostat.currentTask, style: ThermostatAppTheme.title,)
+                                  ],
+                                )
+                                : Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 16, right: 16, bottom: 16, top: 16),
+                                  child: Container(
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: Colors.greenAccent,
+                                      borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                                      boxShadow: <BoxShadow>[
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.6),
+                                          blurRadius: 8,
+                                          offset: const Offset(4, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: const BorderRadius.all(Radius.circular(24.0)),
+                                        highlightColor: Colors.transparent,
+                                        onTap: () async {
+                                          thermostat.deployNewContract(Provider.of<WalletModel>(context, listen: false).credentials);
+                                        },
+                                        child: Center( child: Text(
+                                            'Add thermostat',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 18,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              ],
                             )
                         );
                       }
                     }),
               ),
             ),
-            const Divider(
-              height: 1,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                  left: 16, right: 16, bottom: 16, top: 8),
-              child: Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: const BorderRadius.all(Radius.circular(24.0)),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.6),
-                      blurRadius: 8,
-                      offset: const Offset(4, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: const BorderRadius.all(Radius.circular(24.0)),
-                    highlightColor: Colors.transparent,
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Center(
-                      child: Text(
-                        'Remove thermostat',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 18,
-                            color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            )
           ],
         ),
       ),

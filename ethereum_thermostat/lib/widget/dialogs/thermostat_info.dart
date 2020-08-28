@@ -1,9 +1,11 @@
-import 'package:ethereumthermostat/dialogs/sensor_pick_dialog.dart';
+import 'package:ethereumthermostat/dialogs/room_configuration_dialog.dart';
 import 'package:ethereumthermostat/models/thermostat.dart';
+import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
-import 'package:ethereumthermostat/widget/association_tile.dart';
+import 'package:ethereumthermostat/widget/room_tile.dart';
 import 'package:ethereumthermostat/widget/dialogs/thermostat_gateway.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ThermostatInfo extends StatelessWidget {
   final ThermostatContract thermostat;
@@ -53,7 +55,7 @@ class ThermostatInfo extends StatelessWidget {
                 width: 10,
               ),
               Text(
-                'Sensors',
+                'Rooms',
                 style: TextStyle(color: ThermostatAppTheme.grey, fontSize: 12),
               ),
             ],
@@ -61,12 +63,10 @@ class ThermostatInfo extends StatelessWidget {
           ListView.builder(
               shrinkWrap: true,
               scrollDirection: Axis.vertical,
-              itemCount: thermostat.sensors.length,
+              itemCount: thermostat.rooms.length,
               itemBuilder: (context, index) {
-                return AssociationTile(
-                  sensorName: 'Sensor ' + thermostat.sensors[index].sensorId.toString(),
-                  heaterName: 'Heater ' + thermostat.getHeater(thermostat.sensors[index].heaterAssociate).heaterId.toString(),
-                  heaterValue: thermostat.getHeater(thermostat.sensors[index].heaterAssociate).heaterStatus,
+                return RoomTile(
+                  room: thermostat.rooms[index],
                 );
               }),
           SizedBox(
@@ -81,7 +81,7 @@ class ThermostatInfo extends StatelessWidget {
                     barrierDismissible: true,
                     context: context,
                     builder: (BuildContext context) =>
-                        SensorPickDialog()),
+                        RoomsConfigurationDialog()),
               ),
             ],
           ),

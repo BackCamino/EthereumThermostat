@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:ethereumthermostat/dialogs/gateway_type_dialog.dart';
 import 'package:ethereumthermostat/models/gateway_heaters.dart';
 import 'package:ethereumthermostat/models/gateway_sensors.dart';

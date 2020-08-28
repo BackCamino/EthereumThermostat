@@ -1,5 +1,10 @@
 [
 	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -23,9 +28,9 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint256",
+				"internalType": "int256",
 				"name": "_actualTemp",
-				"type": "uint256"
+				"type": "int256"
 			},
 			{
 				"indexed": false,
@@ -43,11 +48,55 @@
 			{
 				"indexed": false,
 				"internalType": "bool",
-				"name": "_distrupt",
+				"name": "_destroy",
 				"type": "bool"
 			}
 		],
-		"name": "distruptChanged",
+		"name": "destroyChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "int256",
+				"name": "_disabledId",
+				"type": "int256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_idAssociation",
+				"type": "uint256"
+			}
+		],
+		"name": "disabled",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "int256",
+				"name": "_enabledId",
+				"type": "int256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_idAssociation",
+				"type": "uint256"
+			}
+		],
+		"name": "enabled",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [],
+		"name": "isStartedEvent",
 		"type": "event"
 	},
 	{
@@ -80,11 +129,40 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_actualTemp",
+				"name": "",
 				"type": "uint256"
 			}
 		],
-		"name": "communicateTemp",
+		"name": "associations",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "sensorIndex",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "heaterIndex",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "int256",
+				"name": "_threshold",
+				"type": "int256"
+			}
+		],
+		"name": "changeThreshold",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -97,14 +175,27 @@
 				"type": "int256"
 			}
 		],
-		"name": "comunicateHeaterStatus",
+		"name": "communicateStatus",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "int256",
+				"name": "_actualTemp",
+				"type": "int256"
+			}
+		],
+		"name": "communicateTemp",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [],
-		"name": "distrupt",
+		"name": "destroy",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -116,14 +207,43 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "_distrupt",
-				"type": "bool"
-			}
-		],
-		"name": "distruptFun",
+		"inputs": [],
+		"name": "endEvent",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "entered_eventBasedGateway_09o8x0n",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "eventBasedGateway_09o8x0n",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "exclusiveGateway_0g1cgro",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "exclusiveGateway_1989mhw",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "exclusiveGateway_1u6pfgj",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -136,8 +256,37 @@
 				"type": "address"
 			}
 		],
+		"name": "heaterIndex",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
 		"name": "heaterValues",
 		"outputs": [
+			{
+				"internalType": "contract Heater",
+				"name": "heater",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "associationIndex",
+				"type": "uint256"
+			},
 			{
 				"internalType": "int256",
 				"name": "actualStatus",
@@ -150,12 +299,148 @@
 	{
 		"inputs": [
 			{
+				"internalType": "contract Heater",
+				"name": "_heater",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			}
+		],
+		"name": "initializeHeaterAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "contract Sensor",
+				"name": "_sensor",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_id",
+				"type": "uint256"
+			}
+		],
+		"name": "initializeSensorAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "int256",
+				"name": "_actualTemp",
+				"type": "int256"
+			}
+		],
+		"name": "initializeTemp",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "int256",
 				"name": "_threshold",
 				"type": "int256"
 			}
 		],
-		"name": "initialize",
+		"name": "initializeThreshold",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "initializeUserAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "isEnded",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "isReady",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "_isReady",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "isStarted",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "requestDestroy",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "requestShutDown",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "requestWakeUp",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "send_heatOff",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "send_heatOn",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -168,11 +453,11 @@
 				"type": "address"
 			}
 		],
-		"name": "sensorValues",
+		"name": "sensorIndex",
 		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "actualTemp",
+				"name": "",
 				"type": "uint256"
 			}
 		],
@@ -182,27 +467,30 @@
 	{
 		"inputs": [
 			{
-				"internalType": "int256",
-				"name": "_threshold",
-				"type": "int256"
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
-		"name": "setThreshold",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
+		"name": "sensorValues",
+		"outputs": [
+			{
+				"internalType": "contract Sensor",
+				"name": "sensor",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "associationIndex",
+				"type": "uint256"
+			},
 			{
 				"internalType": "int256",
-				"name": "_value",
+				"name": "actualTemp",
 				"type": "int256"
 			}
 		],
-		"name": "setValue",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -219,19 +507,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "_shutDown",
-				"type": "bool"
-			}
-		],
-		"name": "shutDownFun",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [],
 		"name": "threshold",
 		"outputs": [
@@ -245,13 +520,26 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
-		"name": "value",
+		"name": "user",
 		"outputs": [
 			{
-				"internalType": "int256",
+				"internalType": "address",
 				"name": "",
-				"type": "int256"
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",

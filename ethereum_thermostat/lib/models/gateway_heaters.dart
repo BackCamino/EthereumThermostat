@@ -1,18 +1,25 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:ethereumthermostat/models/gateway_sensors.dart';
+import 'package:ethereumthermostat/models/heater.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:web3dart/credentials.dart';
 
 class GatewayHeatersModel with ChangeNotifier {
   BluetoothDevice _device;
   BluetoothConnection _connection;
-  Set<String> _nearDevices;
+  List<NearDevice> _nearDevices;
+  List<HeaterModel> _heaters;
+  bool _deploying;
   bool _scanning;
 
   GatewayHeatersModel(BluetoothDevice device) {
     setDevice = device;
     setScanning = false;
-    _nearDevices = Set();
+    setDeploying = false;
+    _heaters = List();
+    _nearDevices = List();
   }
 
   set setDevice(BluetoothDevice device) {
@@ -30,7 +37,14 @@ class GatewayHeatersModel with ChangeNotifier {
     notifyListeners();
   }
 
-  List<String> get nearDevices => _nearDevices.toList();
+  set setDeploying(bool deploying) {
+    _deploying = deploying;
+    notifyListeners();
+  }
+
+  List<NearDevice> get nearDevices => _nearDevices;
+
+  List<HeaterModel> get heaters => _heaters;
 
   BluetoothConnection get connection => _connection;
 
@@ -44,18 +58,18 @@ class GatewayHeatersModel with ChangeNotifier {
 
   bool get scanning => _scanning;
 
+  bool get deploying => _deploying;
+
   connectToDevice() async {
     bool isDisconnecting = false;
     try {
-      setConnection = await BluetoothConnection.toAddress(device.address);
-      print('Connected to the device');
+      setConnection = await BluetoothConnection.toAddress('B8:27:EB:FB:FA:DD');//device.address);
       isDisconnecting = false;
       notifyListeners();
 
       connection.input.listen((Uint8List data) {
         _analyzeResponse(utf8.decode(data));
       }).onDone(() {
-        removeGateway();
         if (isDisconnecting) {
           print('Disconnecting locally!');
         } else {
@@ -64,6 +78,7 @@ class GatewayHeatersModel with ChangeNotifier {
       });
     } catch (ex) {
       print(ex);
+      setScanning = false;
     }
   }
 
@@ -79,26 +94,56 @@ class GatewayHeatersModel with ChangeNotifier {
   }
 
   void _analyzeResponse(String response) {
-    var addresses = response.split('#');
-    for (String address in addresses) {
-      if (address.isNotEmpty) {
-        print(address);
-        _nearDevices.add(address);
+    if(response.compareTo('nodevice') != 0) {
+      var subResponses = response.split('#');
+      if(subResponses[0].compareTo('ok') == 0) {
+        var acceptedResponse = subResponses[1].split('&');
+        setHeaterContractAddress(acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
+        setDeploying = false;
+        connection.close();
+      }
+      else {
+        var addresses = response.split('#');
+        for(String address in addresses) {
+          if(address.isNotEmpty) {
+            var addressPart = address.split('&');
+            _nearDevices.add(NearDevice(addressPart[0], addressPart[1]));
+          }
+        }
+        connection.close();
       }
     }
     setScanning = false;
     notifyListeners();
   }
 
+  setHeaterContractAddress(String heaterMacAddress, EthereumAddress heaterContractAddress) {
+    _heaters.where((heater) => heater.macAddress == heaterMacAddress).first.setContractAddress = heaterContractAddress;
+  }
+
+  addNewHeater(HeaterModel heaterModel, String thermostatAddress) async {
+    _heaters.add(heaterModel);
+    requestAddHeater(heaterModel.macAddress, heaterModel.heaterId,  thermostatAddress);
+  }
+
+  requestAddHeater(String heaterMacAddress, int heaterId, String thermostatAddress) async {
+    try {
+      setDeploying = true;
+      await connectToDevice();
+      _sendMessage('addh#' + heaterMacAddress + '&' + heaterId.toString() + '@' + thermostatAddress);
+    }
+    catch (ex) {
+      setDeploying = false;
+      print('Request add heater problem : ' + ex.toString());
+    }
+    notifyListeners();
+  }
+
   void getDevices() async {
     try {
       setScanning = true;
-      if (connection == null) {
-        await connectToDevice();
-        _sendMessage('getdevices');
-      } else {
-        _sendMessage('getdevices');
-      }
+      await connectToDevice();
+      _sendMessage('getdevices');
     } catch (ex) {
       setScanning = false;
       print(ex);
@@ -117,5 +162,10 @@ class GatewayHeatersModel with ChangeNotifier {
         print(e);
       }
     }
+  }
+
+  void setSelectedHeater(int index) {
+    _nearDevices[index].setSelected = true;
+    notifyListeners();
   }
 }

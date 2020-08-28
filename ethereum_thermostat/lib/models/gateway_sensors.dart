@@ -1,20 +1,28 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:ethereumthermostat/models/sensor.dart';
+import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:web3dart/credentials.dart';
 
 class GatewaySensorsModel with ChangeNotifier {
 
   BluetoothDevice _device;
   BluetoothConnection _connection;
-  Set<String> _nearDevices;
+  List<NearDevice> _nearDevices;
+  List<SensorModel> _sensors;
+  bool _deploying;
   bool _scanning;
 
   GatewaySensorsModel(BluetoothDevice device) {
     setDevice = device;
     setScanning = false;
-    _nearDevices = Set();
+    setDeploying = false;
+    _nearDevices = List();
+    _sensors = List();
+    notifyListeners();
   }
 
   set setDevice(BluetoothDevice device) {
@@ -32,7 +40,14 @@ class GatewaySensorsModel with ChangeNotifier {
     notifyListeners();
   }
 
-  List<String> get nearDevices => _nearDevices.toList();
+  set setDeploying(bool deploying) {
+    _deploying = deploying;
+    notifyListeners();
+  }
+
+  List<NearDevice> get nearDevices => _nearDevices.toList();
+
+  List<SensorModel> get sensors => _sensors;
 
   BluetoothConnection get connection => _connection;
 
@@ -46,18 +61,18 @@ class GatewaySensorsModel with ChangeNotifier {
 
   bool get scanning => _scanning;
 
+  bool get deploying => _deploying;
+
   connectToDevice() async {
     bool isDisconnecting = false;
     try {
       setConnection = await BluetoothConnection.toAddress(device.address);
-      print('Connected to the device');
       isDisconnecting = false;
       notifyListeners();
 
       connection.input.listen((Uint8List data) {
         _analyzeResponse(utf8.decode(data));
       }).onDone(() {
-        removeGateway();
         if (isDisconnecting) {
           print('Disconnecting locally!');
         } else {
@@ -65,7 +80,8 @@ class GatewaySensorsModel with ChangeNotifier {
         }
       });
     } catch (ex) {
-      print(ex);
+      print('Connection problem : ' + ex.toString());
+      setScanning = false;
     }
   }
 
@@ -80,12 +96,29 @@ class GatewaySensorsModel with ChangeNotifier {
     notifyListeners();
   }
 
+  void setSelectedSensor(int index) {
+    _nearDevices[index].setSelected = true;
+    notifyListeners();
+  }
+
   void _analyzeResponse(String response) {
-    var addresses = response.split('#');
-    for(String address in addresses) {
-      if(address.isNotEmpty) {
-        print(address);
-        _nearDevices.add(address);
+    if(response.compareTo('nodevice') != 0) {
+      var subResponses = response.split('#');
+      if(subResponses[0].compareTo('ok') == 0) {
+        var acceptedResponse = subResponses[1].split('&');
+        setSensorContractAddress(acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
+        setDeploying = false;
+        connection.close();
+      }
+      else {
+        var addresses = response.split('#');
+        for(String address in addresses) {
+          if(address.isNotEmpty) {
+            var addressPart = address.split('&');
+            _nearDevices.add(NearDevice(addressPart[0], addressPart[1]));
+          }
+        }
+        connection.close();
       }
     }
     setScanning = false;
@@ -95,14 +128,53 @@ class GatewaySensorsModel with ChangeNotifier {
   void getDevices() async {
     try {
       setScanning = true;
-      if (connection == null) {
-        await connectToDevice();
-        _sendMessage('getdevices');
-      } else {
-        _sendMessage('getdevices');
-      }
+      await connectToDevice();
+      clearDeviceList();
+      _sendMessage('getdevices');
     } catch (ex) {
       setScanning = false;
+      print('Request devices problem : ' + ex.toString());
+    }
+    notifyListeners();
+  }
+
+  clearDeviceList() {
+    _nearDevices.clear();
+    notifyListeners();
+  }
+
+  setSensorContractAddress(String sensorMacAddress, EthereumAddress sensorContractAddress) {
+    _sensors.where((sensor) => sensor.macAddress == sensorMacAddress).first.setContractAddress = sensorContractAddress;
+  }
+
+  addNewSensor(SensorModel sensorModel, String thermostatAddress) async {
+    _sensors.add(sensorModel);
+    requestAddSensor(sensorModel.macAddress, sensorModel.sensorId, thermostatAddress);
+  }
+
+  requestAddSensor(String sensorMacAddress, int sensorIndex, String thermostatAddress) async {
+    try {
+      setDeploying = true;
+      await connectToDevice();
+      _sendMessage('adds#' + sensorMacAddress + '&' + sensorIndex.toString() + '@' + thermostatAddress);
+    }
+    catch (ex) {
+      setDeploying = false;
+      print('Request add sensor problem : ' + ex.toString());
+    }
+    notifyListeners();
+  }
+
+  Future<void> sendReady(int roomIndex) async {
+    try {
+      if (connection == null || !connection.isConnected) {
+        await connectToDevice();
+        _sendMessage('ready#' + roomIndex.toString());
+      } else {
+        _sendMessage('ready#' + roomIndex.toString());
+      }
+    }
+    catch (ex) {
       print(ex);
     }
     notifyListeners();
@@ -116,9 +188,30 @@ class GatewaySensorsModel with ChangeNotifier {
         await connection.output.allSent;
         print('Message sent');
       } catch (e) {
-        print(e);
+        print('Send message ($message) problem : ' + e.toString());
       }
     }
   }
+}
 
+class NearDevice {
+  String _name;
+  String _address;
+  bool _selected;
+
+  NearDevice(String name, String address,) {
+    _name = name;
+    _address = address;
+    _selected = false;
+  }
+
+  String get name => _name;
+
+  String get address => _address;
+
+  bool get selected => _selected;
+
+  set setSelected(bool selected) {
+    _selected = selected;
+  }
 }

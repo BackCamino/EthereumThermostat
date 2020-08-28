@@ -1,13 +1,10 @@
-import 'dart:math';
 import 'package:ethereumthermostat/dialogs/thermostat_dialog.dart';
-import 'package:ethereumthermostat/models/app_model.dart';
 import 'package:ethereumthermostat/models/thermostat.dart';
-import 'package:ethereumthermostat/models/thermostat_controller_model.dart';
 import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
-import 'package:ethereumthermostat/widget/association_tile.dart';
-import 'package:ethereumthermostat/widget/thermostat/thermostat.dart';
-import 'package:ethereumthermostat/widget/thermostat/thermostat_container.dart';
+import 'package:ethereumthermostat/widget/controller/actual_stats.dart';
+import 'package:ethereumthermostat/widget/controller/controller_section.dart';
+import 'package:ethereumthermostat/widget/controller/rooms_section.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -23,170 +20,39 @@ class _ControlPageState extends State<ControlPage> {
     return Container(
         color: ThermostatAppTheme.background,
         child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Container(
-            height: 600,
-            margin: EdgeInsets.only(right: 10.0, top: 50.0, left: 10.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(30), topLeft: Radius.circular(30)),
-              color: Colors.white,
-            ),
-            child: Consumer<ThermostatContract>(
-                builder: (context, thermostat, child) {
-                  if (thermostat != null && thermostat.initialized && thermostat.sensors != null) {
-                    return Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            backgroundColor: Colors.transparent,
+            body: SingleChildScrollView(
+                child: Column(children: <Widget>[
+              Container(
+                height: 600,
+                margin: EdgeInsets.only(right: 10.0, top: 50.0, left: 10.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(30),
+                      topLeft: Radius.circular(30)),
+                  color: Colors.white,
+                ),
+                child: Consumer<ThermostatContract>(
+                    builder: (context, thermostat, child) {
+                  if (thermostat.initialized) {
+                    return Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Padding(
-                            padding: EdgeInsets.only(top: 30),
-                            child:Column(
-                              children: <Widget>[
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[
-                                    SizedBox(
-                                      height: 30,
-                                      width: 30,
-                                      child: Image.asset('assets/images/adjust.png'),
-                                    ),
-                                    SizedBox(
-                                      width: 10,
-                                    ),
-                                    Consumer<ThermostatControllerModel>(
-                                      builder: (context, thermostat, child) {
-                                        return Text(
-                                          thermostat.currentThreshold.toString(),
-                                          style: TextStyle(
-                                              fontSize: 40,
-                                              fontWeight: FontWeight.bold),
-                                        );
-                                      },
-                                    ),
-                                    SizedBox(
-                                      width: 2,
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 20),
-                                      child: Text(
-                                        '°C',
-                                        style:
-                                        TextStyle(color: Colors.grey, fontSize: 12),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                SizedBox(
-                                  height: 13,
-                                ),
-                                Text('Threshold', style: ThermostatAppTheme.title,)
-                              ],
-                            ),
+                          ActualStats(
+                            actualThreshold: thermostat.threshold,
+                            actualTemp: thermostat.getAverageTemperature(),
                           ),
-                          Padding(
-                            padding: EdgeInsets.only(left: 30, right: 10, top: 30),
-                            child: Container(
-                              height: 48,
-                              width: 2,
-                              decoration: BoxDecoration(
-                                color: Colors.greenAccent.withOpacity(0.5),
-                                borderRadius: BorderRadius.all(Radius.circular(4.0)),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(top: 10),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: <Widget>[
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[Consumer<ThermostatContract>(
-                                    builder: (context, thermostat, child) {
-                                      if (thermostat != null && thermostat.sensors != null) {
-                                        return Container(
-                                          height: 80,
-                                          width: 160,
-                                          child: ListView.builder(
-                                              shrinkWrap: true,
-                                              itemCount: thermostat.sensors.length,
-                                              itemBuilder: (context, index) {
-                                                return AssociationTile(
-                                                  sensorName: 'Sensor ' + thermostat.sensors[index].sensorId.toString(),
-                                                  heaterName: 'Heater ' + thermostat.getHeater(thermostat.sensors[index].heaterAssociate).heaterId.toString(),
-                                                  heaterValue: thermostat.getHeater(thermostat.sensors[index].heaterAssociate).heaterStatus,
-                                                );
-                                              }),
-                                        );
-                                      }
-                                      return Container();
-                                    },
-                                  ),
-                                  ],
-                                ),
-                                Text('Temperature', style: ThermostatAppTheme.title,)
-                              ],
-                            ),
-                          )
-                        ],
-                        //),
-                      ),
-                      Flexible(
-                        flex: 2,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 20.0),
-                          child: Container(
-                            child: Stack(
-                              children: <Widget>[
-                                Transform.rotate(
-                                  angle: (2 * pi) * 0.25,
-                                  child: Container(
-                                    height: 360,
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.white,
-                                    ),
-                                    child: Container(
-                                        height: double.infinity,
-                                        width: double.infinity,
-                                        padding: EdgeInsets.all(65),
-                                        child: Consumer<ThermostatControllerModel>(
-                                            builder: (context, thermostat, child) {
-                                              return CustomPaint(
-                                                painter: Thermostat(
-                                                  currentTem: thermostat.currentThreshold,
-                                                ),
-                                              );
-                                            })),
-                                  ),
-                                ),
-                                Container(
-                                  height: 360,
-                                  width: double.infinity,
-                                  color: Colors.transparent,
-                                  child: ThermostatContainer(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Consumer<ThermostatContract>(
-                        builder: (context, thermostat, child) {
-                          return Consumer<WalletModel>(
-                              builder: (context, wallet, child) {
+                          ControllerSection(),
+                          Consumer<ThermostatContract>(
+                            builder: (context, thermostat, child) {
+                              return Consumer<WalletModel>(
+                                  builder: (context, wallet, child) {
                                 return GestureDetector(
                                   onTap: () {
+                                    // TODO : SHUTDOWN FUNCTION CALL
                                     //thermostat.shutDownFun(thermostat.shutDown ? false as BoolType : true as BoolType);
-                                    thermostat.setValue(wallet.web3client,
-                                        wallet.credentials, BigInt.from(3));
+                                    /*thermostat.setValue(wallet.web3client,
+                                    wallet.credentials, BigInt.from(3));*/
                                   },
                                   child: Icon(
                                     Icons.power_settings_new,
@@ -195,31 +61,41 @@ class _ControlPageState extends State<ControlPage> {
                                   ),
                                 );
                               });
-                        },
-                      ),
-                      SizedBox(
-                        height: 40,
-                      ),
-                    ]);
+                            },
+                          ),
+                          SizedBox(
+                            height: 40,
+                          ),
+                        ]);
                   } else {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          Text('Thermostat not configured', style: ThermostatAppTheme.title,),
+                          Text(
+                            'Thermostat not configured',
+                            style: ThermostatAppTheme.title,
+                          ),
                           IconButton(
                             icon: Icon(Icons.add_circle_outline),
                             onPressed: () => showDialog<dynamic>(
                                 barrierDismissible: true,
                                 context: context,
-                                builder: (BuildContext context) => ThermostatDialog()),
+                                builder: (BuildContext context) =>
+                                    ThermostatDialog()),
                           )
                         ],
                       ),
                     );
                   }
                 }),
-          ),
-        ));
+              ),
+              Consumer<ThermostatContract>(
+                  builder: (context, thermostat, child) {
+                return RoomsSection(
+                  rooms: thermostat.rooms,
+                );
+              })
+            ]))));
   }
 }
