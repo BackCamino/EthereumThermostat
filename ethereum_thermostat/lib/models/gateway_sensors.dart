@@ -20,10 +20,7 @@ class GatewaySensorsModel with ChangeNotifier {
     setDevice = device;
     setScanning = false;
     setDeploying = false;
-    _nearDevices = [
-      NearDevice('Sensor1', '[12:12:12]'),
-      NearDevice('Sensor2', '[13:13:13]'),
-    ];
+    _nearDevices = List();
     _sensors = List();
     notifyListeners();
   }
@@ -126,7 +123,7 @@ class GatewaySensorsModel with ChangeNotifier {
         }
       }
     }
-    connection.close();
+    _connection.close();
     setScanning = false;
     notifyListeners();
   }

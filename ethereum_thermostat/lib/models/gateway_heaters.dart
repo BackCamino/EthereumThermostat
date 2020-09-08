@@ -19,10 +19,7 @@ class GatewayHeatersModel with ChangeNotifier {
     setScanning = false;
     setDeploying = false;
     _heaters = List();
-    _nearDevices = [
-      NearDevice('Heater1', '[22:22:22]'),
-      NearDevice('Heater2', '[23:23:23]'),
-    ];
+    _nearDevices = List();
     notifyListeners();
   }
 
@@ -67,7 +64,7 @@ class GatewayHeatersModel with ChangeNotifier {
   connectToDevice() async {
     bool isDisconnecting = false;
     try {
-      setConnection = await BluetoothConnection.toAddress('B8:27:EB:FB:FA:DD');//device.address);
+      setConnection = await BluetoothConnection.toAddress(device.address);//device.address);
       isDisconnecting = false;
       notifyListeners();
 
@@ -82,6 +79,7 @@ class GatewayHeatersModel with ChangeNotifier {
       });
     } catch (ex) {
       print(ex);
+      setDeploying = false;
       setScanning = false;
     }
   }
@@ -104,7 +102,6 @@ class GatewayHeatersModel with ChangeNotifier {
         var acceptedResponse = subResponses[1].split('&');
         setHeaterContractAddress(acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
         setDeploying = false;
-        connection.close();
       }
       else {
         var addresses = response.split('#');
@@ -114,9 +111,9 @@ class GatewayHeatersModel with ChangeNotifier {
             _nearDevices.add(NearDevice(addressPart[0], addressPart[1]));
           }
         }
-        connection.close();
       }
     }
+    _connection.close();
     setScanning = false;
     notifyListeners();
   }
