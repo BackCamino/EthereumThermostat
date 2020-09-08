@@ -206,12 +206,32 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
      * @return
      */
     private SolidityFile generateSolidityFile() {
-        SolidityFile solidityFile = new SolidityFile(("Translated " + this.getModel().getModel().getModelName()).trim());
+        SolidityFile solidityFile = new SolidityFile(("Translated_" + this.getModel().getModel().getModelName()).trim().replace(" ", "_"));
+        solidityFile.addComponent(fileInfoComment());
         OwnedContract ownedContract = new OwnedContract();
         solidityFile.addComponent(ownedContract);
         this.contracts.forEach(solidityFile::addComponent);
 
         return solidityFile;
+    }
+
+    private Comment fileInfoComment() {
+        StringBuilder commentString = new StringBuilder("Solidity file translated with a BPMN choreography translator\n\n");
+        commentString.append("List of all element codes\n");
+        getChoreographyTasks().stream()
+                .map(el -> "Choreography task | Name: " + el.getName() + " - Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+        this.getModel().getModelElementsByType(Gateway.class).stream()
+                .map(el -> "Gateway | Type: " + (el instanceof ExclusiveGateway ? "Exclusive" : (el instanceof ParallelGateway ? "Parallel" : (el instanceof EventBasedGateway ? "Event based" : "Other"))) + (isClosing(el) ? " Closed" : " Open") + " - Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+        this.getModel().getModelElementsByType(StartEvent.class).stream()
+                .map(el -> "Start event | Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+        this.getModel().getModelElementsByType(EndEvent.class).stream()
+                .map(el -> "End event | Id: " + el.getId() + " - Code: " + el.getId().hashCode() + "\n")
+                .forEach(commentString::append);
+
+        return new Comment(commentString.toString());
     }
 
     /**
@@ -254,23 +274,31 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
     private void addIsReadyFunction(Contract contract) {
         Function isReady = new Function("isReady");
         isReady.setComment(new Comment("Checks whether this contract is ready to start.\nThis contract is ready to start only if this contract is configured and all the related contracts to this are ready.", true));
-        Function isReadyExt = new Function("isReadyExt");
+        //Function isReadyExt = new Function("isReadyExt");
         isReady.setComment(new Comment("Checks whether the attributes of this contract are all set in order to start.\nChecks only the attributes of this contract.", true));
         Variable returnedVariable = new Variable("_isReady", new Type(Type.BaseTypes.BOOL));
         isReady.addReturned(returnedVariable);
-        isReadyExt.addReturned(returnedVariable);
-        isReadyExt.setMarker(Function.Markers.VIEW);
-        isReadyExt.setVisibility(Visibility.EXTERNAL);
+        //isReadyExt.addReturned(returnedVariable);
+        //isReadyExt.setMarker(Function.Markers.VIEW);
+        //isReadyExt.setVisibility(Visibility.EXTERNAL);
+
+        //check external participants
+        externalParticipantsDealingWith(getParticipant(contract.getName())).stream()
+                .map(el -> new IfThenElse(isReadyShortCondition(decapitalize(VariablesParser.parseExtName(el.getName()))), List.of(new Statement("return false;"))))
+                .forEach(isReady::addStatement);
 
         //check single instance contracts
+        /*
         singleInstanceContractsDealingWith(contract).stream()
                 .map(el -> new IfThenElse(isReadyCondition(el), List.of(new Statement("return false;"))))
                 .forEach(isReady::addStatement);
+         */
         singleInstanceContractsDealingWith(contract).stream()
                 .map(el -> new IfThenElse(isReadyShortCondition(el), List.of(new Statement("return false;"))))
-                .forEach(isReadyExt::addStatement);
+                .forEach(isReady::addStatement); //isReadyExt
 
         //check multiple instance contracts
+        /*
         multiInstanceParticipantsDealingWith(getParticipant(contract.getName())).stream()
                 .filter(this::isContract)
                 .map(el -> new For(
@@ -280,6 +308,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                         , List.of(new IfThenElse(isReadyCondition(decapitalize(el.getName()) + "Values[i]." + decapitalize(el.getName())), List.of(new Statement("return false;"))))
                 ))
                 .forEach(isReady::addStatement);
+         */
         multiInstanceParticipantsDealingWith(getParticipant(contract.getName())).stream()
                 .filter(this::isContract)
                 .map(el -> new For(
@@ -288,13 +317,13 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                         , new Statement("i++")
                         , List.of(new IfThenElse(isReadyShortCondition(decapitalize(el.getName()) + "Values[i]." + decapitalize(el.getName())), List.of(new Statement("return false;"))))
                 ))
-                .forEach(isReadyExt::addStatement);
+                .forEach(isReady::addStatement); //isReadyExt
 
         isReady.addStatement(new Statement("start();"));
         isReady.addStatement(new Statement("return true;"));
-        isReadyExt.addStatement(new Statement("return true;"));
+        //isReadyExt.addStatement(new Statement("return true;"));
         contract.addFunction(isReady);
-        contract.addFunction(isReadyExt);
+        //contract.addFunction(isReadyExt);
     }
 
     private void addIsReadyInvocationInConstructor() {
