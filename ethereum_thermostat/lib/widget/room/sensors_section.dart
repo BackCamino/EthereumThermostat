@@ -1,22 +1,18 @@
 import 'package:ethereumthermostat/models/gateway_heaters.dart';
 import 'package:ethereumthermostat/models/gateway_sensors.dart';
-import 'package:ethereumthermostat/models/sensor.dart';
-import 'package:ethereumthermostat/models/thermostat.dart';
-import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class SensorsSection extends StatelessWidget {
 
   final GatewaySensorsModel gatewaySensorsModel;
   final GatewayHeatersModel gatewayHeatersModel;
-  final ThermostatContract thermostatContract;
+  final Function(String) callback;
 
-  const SensorsSection({Key key, this.gatewaySensorsModel, this.gatewayHeatersModel, this.thermostatContract}) : super(key: key);
+  const SensorsSection({Key key, this.gatewaySensorsModel, this.gatewayHeatersModel, this.callback}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (gatewaySensorsModel.device != null && gatewayHeatersModel.device != null) {
+    if (gatewaySensorsModel.device != null) {
       if (!gatewayHeatersModel.scanning) {
         return Column(
           children: <Widget>[
@@ -32,8 +28,7 @@ class SensorsSection extends StatelessWidget {
               child: SingleChildScrollView(
                 child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: gatewaySensorsModel
-                        .nearDevices.length,
+                    itemCount: gatewaySensorsModel.nearDevices.length,
                     itemBuilder: (context, index) {
                       return Row(
                         children: <Widget>[
@@ -58,32 +53,7 @@ class SensorsSection extends StatelessWidget {
                                       ),
                                       onTap: () async {
                                         gatewaySensorsModel.setSelectedSensor(index);
-                                        final sensorChosen = gatewaySensorsModel.nearDevices[index].address;
-                                        final roomIndex = thermostatContract.rooms.length;
-
-                                        // deploy new Sensor
-                                        final newSensor = SensorModel(
-                                            roomIndex
-                                        );
-                                        newSensor.setMacAddress = sensorChosen;
-                                        await gatewaySensorsModel.addNewSensor(newSensor, thermostatContract.hexAddress);
-
-                                        while(gatewaySensorsModel.deploying || thermostatContract.processing) {
-                                          print('Deploying sensor contract...');
-                                          await Future.delayed(Duration(seconds: 5));
-                                        }
-                                        print('Sensor contract deployed!');
-
-                                        thermostatContract.initializeSensorAddress(
-                                            Provider.of<WalletModel>(context, listen: false).credentials,
-                                            gatewaySensorsModel.sensors.where((element) => element.sensorId == roomIndex).first.contractAddress,
-                                            BigInt.from(roomIndex));
-
-                                        /*thermostatContract.rooms[roomIndex].setSensor = gatewaySensors.sensors.where((element) => element.sensorId == roomIndex).first;
-                                  thermostatContract.initializeSensorAddress(
-                                      Provider.of<WalletModel>(context, listen: false).credentials,
-                                      gatewaySensors.sensors.where((element) => element.sensorId == roomIndex).first.contractAddress,
-                                      BigInt.from(roomIndex));*/
+                                        callback(gatewaySensorsModel.nearDevices[index].address);
                                       }
                                   ),
                                 )
@@ -96,14 +66,12 @@ class SensorsSection extends StatelessWidget {
             ),
           ],
         );
-      } else if(gatewaySensorsModel.deploying) {
-        return Text('Gateway heaters deploying...');
       }
       else {
         return Text('Gateway heaters scanning...');
       }
     } else {
-      return Text('Gateways not configured!');
+      return Text('Gateway sensor not configured!');
     }
   }
 }

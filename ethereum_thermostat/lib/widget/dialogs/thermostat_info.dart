@@ -1,16 +1,20 @@
 import 'package:ethereumthermostat/dialogs/room_configuration_dialog.dart';
+import 'package:ethereumthermostat/models/gateway_heaters.dart';
+import 'package:ethereumthermostat/models/gateway_sensors.dart';
 import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:ethereumthermostat/widget/room_tile.dart';
 import 'package:ethereumthermostat/widget/dialogs/thermostat_gateway.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class ThermostatInfo extends StatelessWidget {
   final ThermostatContract thermostat;
+  final GatewaySensorsModel gatewaySensorsModel;
+  final GatewayHeatersModel gatewayHeatersModel;
+  final WalletModel wallet;
 
-  ThermostatInfo({@required this.thermostat});
+  ThermostatInfo({@required this.thermostat, this.wallet, this.gatewaySensorsModel, this.gatewayHeatersModel});
 
   @override
   Widget build(BuildContext context) {
@@ -67,12 +71,29 @@ class ThermostatInfo extends StatelessWidget {
               itemBuilder: (context, index) {
                 return RoomTile(
                   room: thermostat.rooms[index],
+                  thermostatContract: thermostat,
                 );
               }),
           SizedBox(
             height: 8,
           ),
-          Row(
+          thermostat.roomsInitialized
+              ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                thermostat.processing ? CircularProgressIndicator() :
+            OutlineButton(
+              onPressed: () async {
+                thermostat.initializeThreshold(wallet.credentials, BigInt.from(20));
+              },
+              child: Text('Start'),
+            ),
+            thermostat.thersholdInitialized ? OutlineButton(
+              onPressed: () async {
+                gatewaySensorsModel.requestReadySensors();
+              },
+              child: Text('Ready Sensors'),
+            ) : Container()
+          ],)
+              : Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               GestureDetector(
@@ -88,7 +109,7 @@ class ThermostatInfo extends StatelessWidget {
           SizedBox(
             height: 20,
           ),
-          ThermostatGateway()
+          thermostat.roomsInitialized ? Container() : ThermostatGateway()
         ]),
       ),
     );

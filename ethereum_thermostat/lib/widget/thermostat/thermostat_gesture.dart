@@ -1,5 +1,7 @@
 
+import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/models/thermostat_controller_model.dart';
+import 'package:ethereumthermostat/models/wallet.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttery_dart2/animations.dart';
 import 'package:provider/provider.dart';
@@ -19,12 +21,12 @@ class _CircleGestureDetectorState extends State<CircleGestureDetector> {
   double _startDragPreCent;
   double _currentDragPreCent;
 
-  _onRadialDragStart(PolarCoord coord, BuildContext context) {
+  _onRadialDragStart(PolarCoord coord, ThermostatControllerModel thermostatControllerModel) {
     _startDragCoord = coord;
-    _startDragPreCent = Provider.of<ThermostatControllerModel>(context, listen: false).preCent;
+    _startDragPreCent = thermostatControllerModel.preCent;
   }
 
-  _onRadialDragUpdate(PolarCoord coord, BuildContext context){
+  _onRadialDragUpdate(PolarCoord coord, ThermostatContract thermostatContract, ThermostatControllerModel thermostatControllerModel){
     if(_startDragCoord != null) {
       final dragAngle = coord.angle - _startDragCoord.angle;
       final dragPreCent = dragAngle / (2 * pi);
@@ -33,14 +35,16 @@ class _CircleGestureDetectorState extends State<CircleGestureDetector> {
 
       setState(() {
           _currentDragPreCent = dragValue ?? 0.0;
-          Provider.of<ThermostatControllerModel>(context, listen: false).setPrecent(_currentDragPreCent ?? _seekPrecent);
-          Provider.of<ThermostatControllerModel>(context, listen: false).setThreshold(max1);
+          thermostatControllerModel.setPrecent(_currentDragPreCent ?? _seekPrecent);
+          thermostatControllerModel.setThreshold(max1);
+          thermostatContract.setThreshold = max1;
       });
     }
   }
 
-  onRadialDragEnd(){
-    /* Aggiungere chiamata contratto qui */
+  onRadialDragEnd(ThermostatContract thermostatContract, WalletModel walletModel){
+    /* chiamata function */
+    thermostatContract.changeThresholdTemp(walletModel.credentials);
       setState(() {
         _seekPrecent = _currentDragPreCent;
         _currentDragPreCent = null;
@@ -51,12 +55,14 @@ class _CircleGestureDetectorState extends State<CircleGestureDetector> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThermostatControllerModel>(
-      builder: (context, thermostat, child) {
+    return Consumer3<ThermostatControllerModel, ThermostatContract, WalletModel>(
+      builder: (context, thermostat, thermostatContract, wallet,child) {
         return RadialDragGestureDetector(
-          onRadialDragStart: (coord) => _onRadialDragStart(coord, context),
-          onRadialDragUpdate: (coord) =>  _onRadialDragUpdate(coord, context),
-          onRadialDragEnd: onRadialDragEnd,
+          onRadialDragStart: (coord) => _onRadialDragStart(coord, thermostat),
+          onRadialDragUpdate: (coord) =>  _onRadialDragUpdate(coord, thermostatContract, thermostat),
+          onRadialDragEnd: () {
+            onRadialDragEnd(thermostatContract, wallet);
+          },
           child: ThermostatController(),
         );
       },

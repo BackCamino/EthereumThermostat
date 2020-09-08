@@ -6,11 +6,14 @@ class HeaterModel with ChangeNotifier {
 
   int _heaterStatus;
   int _heaterId;
+  int _sensorAssociate;
   EthereumAddress _contractAddress;
   String _macAddress;
 
-  HeaterModel(int heaterId) {
-    _heaterId = heaterId;
+  HeaterModel(int heaterId, {EthereumAddress contractAddress, int sensorAssociate, String macAddress})
+      : _contractAddress = contractAddress, _sensorAssociate = sensorAssociate, _macAddress = macAddress
+  {
+    setHeaterId = heaterId;
   }
 
   EthereumAddress get contractAddress => _contractAddress;
@@ -20,6 +23,13 @@ class HeaterModel with ChangeNotifier {
   int get heaterStatus => _heaterStatus;
 
   int get heaterId => _heaterId;
+
+  int get sensorAssociate => _sensorAssociate;
+
+  set setSensorAssociate(int sensorAssociate) {
+    _sensorAssociate = sensorAssociate;
+    notifyListeners();
+  }
 
   set setHeaterId(int heaterId) {
     _heaterId = heaterId;

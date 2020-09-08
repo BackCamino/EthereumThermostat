@@ -1,3 +1,4 @@
+import 'package:ethereumthermostat/dialogs/room_configuration_dialog.dart';
 import 'package:ethereumthermostat/dialogs/thermostat_dialog.dart';
 import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/models/wallet.dart';
@@ -34,40 +35,65 @@ class _ControlPageState extends State<ControlPage> {
                 ),
                 child: Consumer<ThermostatContract>(
                     builder: (context, thermostat, child) {
-                  if (thermostat.initialized) {
+                  if(!thermostat.roomsInitialized) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            'Rooms not initialized',
+                            style: ThermostatAppTheme.title,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.add_circle_outline),
+                            onPressed: () => showDialog<dynamic>(
+                                barrierDismissible: true,
+                                context: context,
+                                builder: (BuildContext context) =>
+                                    RoomsConfigurationDialog()),
+                          )
+                        ],
+                      ),
+                    );
+                  }
+                  else if (thermostat.initialized) {
                     return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           ActualStats(
-                            actualThreshold: thermostat.threshold,
-                            actualTemp: thermostat.getAverageTemperature(),
+                            thermostatContract: thermostat,
                           ),
-                          ControllerSection(),
+                          thermostat.thresholdEnabled ? ControllerSection() : Column(children: [SizedBox(height: 100,), Text('Setting threshold...!')],),
                           Consumer<ThermostatContract>(
                             builder: (context, thermostat, child) {
                               return Consumer<WalletModel>(
                                   builder: (context, wallet, child) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    // TODO : SHUTDOWN FUNCTION CALL
-                                    //thermostat.shutDownFun(thermostat.shutDown ? false as BoolType : true as BoolType);
-                                    /*thermostat.setValue(wallet.web3client,
-                                    wallet.credentials, BigInt.from(3));*/
-                                  },
-                                  child: Icon(
-                                    Icons.power_settings_new,
-                                    color: Colors.red,
-                                    size: 40,
-                                  ),
-                                );
-                              });
+                                    return Column(
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () async {
+                                              // TODO : SHUTDOWN FUNCTION CALL
+                                              // thermostat.shutDownFun(thermostat.shutDown ? false as BoolType : true as BoolType);
+                                              // /*thermostat.setValue(wallet.web3client, wallet.credentials, BigInt.from(3));*/
+                                            },
+                                            child: Icon(
+                                              Icons.power_settings_new,
+                                              color: Colors.red,
+                                              size: 40,
+                                            ),
+                                          ),
+                                          SizedBox(height: 20,),
+                                        ],
+                                      );
+                                  });
                             },
                           ),
                           SizedBox(
                             height: 40,
                           ),
                         ]);
-                  } else {
+                  }
+                  else {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -96,6 +122,8 @@ class _ControlPageState extends State<ControlPage> {
                   rooms: thermostat.rooms,
                 );
               })
-            ]))));
+            ]))
+        )
+    );
   }
 }

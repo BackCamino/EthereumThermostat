@@ -20,7 +20,10 @@ class GatewaySensorsModel with ChangeNotifier {
     setDevice = device;
     setScanning = false;
     setDeploying = false;
-    _nearDevices = List();
+    _nearDevices = [
+      NearDevice('Sensor1', '[12:12:12]'),
+      NearDevice('Sensor2', '[13:13:13]'),
+    ];
     _sensors = List();
     notifyListeners();
   }
@@ -81,6 +84,7 @@ class GatewaySensorsModel with ChangeNotifier {
       });
     } catch (ex) {
       print('Connection problem : ' + ex.toString());
+      setDeploying = false;
       setScanning = false;
     }
   }
@@ -102,13 +106,15 @@ class GatewaySensorsModel with ChangeNotifier {
   }
 
   void _analyzeResponse(String response) {
-    if(response.compareTo('nodevice') != 0) {
+    if(response.compareTo('ready') == 0) {
+    print('Sensors initialized');
+    }
+    else if(response.compareTo('nodevice') != 0) {
       var subResponses = response.split('#');
       if(subResponses[0].compareTo('ok') == 0) {
         var acceptedResponse = subResponses[1].split('&');
         setSensorContractAddress(acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
         setDeploying = false;
-        connection.close();
       }
       else {
         var addresses = response.split('#');
@@ -118,9 +124,9 @@ class GatewaySensorsModel with ChangeNotifier {
             _nearDevices.add(NearDevice(addressPart[0], addressPart[1]));
           }
         }
-        connection.close();
       }
     }
+    connection.close();
     setScanning = false;
     notifyListeners();
   }
@@ -145,11 +151,22 @@ class GatewaySensorsModel with ChangeNotifier {
 
   setSensorContractAddress(String sensorMacAddress, EthereumAddress sensorContractAddress) {
     _sensors.where((sensor) => sensor.macAddress == sensorMacAddress).first.setContractAddress = sensorContractAddress;
+    _sensors.where((sensor) => sensor.macAddress == sensorMacAddress).first.setDeployed = true;
   }
 
   addNewSensor(SensorModel sensorModel, String thermostatAddress) async {
     _sensors.add(sensorModel);
     requestAddSensor(sensorModel.macAddress, sensorModel.sensorId, thermostatAddress);
+  }
+
+  requestReadySensors() async {
+    try {
+      await connectToDevice();
+      _sendMessage('ready');
+    }
+    catch (ex) {
+
+    }
   }
 
   requestAddSensor(String sensorMacAddress, int sensorIndex, String thermostatAddress) async {

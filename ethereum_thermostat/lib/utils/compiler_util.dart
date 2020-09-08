@@ -16,21 +16,20 @@ class CompilerUtil {
 
   CompilerUtil._internal();
 
-  Future<String> fetchAbi() async {
-
-  }
-
-  Future<String> fetchBin() async {
+  Future<Map<String, String>> getData(int rooms) async {
     http.Response response;
     response = await http.get(
-      'http://sol-compiler.herokuapp.com/translate',
+      'https://bpmn2sol-server.herokuapp.com/predefined/thermostat/compiled?rooms=$rooms',
       headers: headers,
     );
+    if(response != null) {
+      Map<String, dynamic> result = json.decode(response.body);
+      return {
+        'abi': json.encode(result['contracts']['Translated_BPMN_Model.sol']['Thermostat']['abi']),
+        'bytecode': result['contracts']['Translated_BPMN_Model.sol']['Thermostat']['evm']['bytecode']['object'].toString()
+      };
+    }
+    return null;
   }
 
-  String requestBinBody() {
-    return jsonEncode({
-      
-    });
-  }
 }

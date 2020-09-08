@@ -9,9 +9,11 @@ class Room {
   SensorModel _sensor;
   HeaterModel _heater;
 
-  Room(String name, int roomId) {
+  Room(String name, int roomId, {SensorModel sensorModel, HeaterModel heaterModel}) {
     _name = name;
     _roomId = roomId;
+    _sensor = sensorModel;
+    _heater = heaterModel;
   }
 
   String get name => _name;

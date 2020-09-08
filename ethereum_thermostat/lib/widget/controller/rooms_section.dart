@@ -1,7 +1,9 @@
 import 'package:ethereumthermostat/dialogs/room_configuration_dialog.dart';
 import 'package:ethereumthermostat/models/room.dart';
+import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../room_tile.dart';
 
 class RoomsSection extends StatelessWidget {
@@ -36,6 +38,7 @@ class RoomsSection extends StatelessWidget {
                     itemBuilder: (context, index) {
                       return RoomTile(
                         room: rooms[index],
+                        thermostatContract: Provider.of<ThermostatContract>(context),
                       );
                     }),
               ],
@@ -62,7 +65,7 @@ class RoomsSection extends StatelessWidget {
                   mainAxisSize: MainAxisSize.max,
                   children: <Widget>[
                     Text(
-                      'Rooms not configured',
+                      'No rooms configured',
                       style: ThermostatAppTheme.title,
                     ),
                   ],

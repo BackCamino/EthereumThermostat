@@ -1,10 +1,12 @@
 import 'package:ethereumthermostat/models/room.dart';
+import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:flutter/material.dart';
 
 class RoomTile extends StatelessWidget {
   final Room room;
+  final ThermostatContract thermostatContract;
 
-  const RoomTile({Key key, this.room}) : super(key: key);
+  const RoomTile({Key key, this.room, this.thermostatContract}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +41,26 @@ class RoomTile extends StatelessWidget {
                 height: 6,
                 width: 6,
               )
-            : Container()
+            : Container(),
+        SizedBox(
+          width: 20,
+        ),
+        Text(room.sensor.actualTemp.toString() + ' °C'),
+        SizedBox(
+          width: 20,
+        ),
+        GestureDetector(
+          onTap: remove,
+          child: Icon(
+            Icons.delete,
+            color: Colors.red,
+          ),
+        )
       ],
     );
+  }
+
+  void remove() async {
+    await thermostatContract.removeRoom(room.roomId);
   }
 }

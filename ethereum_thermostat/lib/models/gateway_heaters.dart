@@ -19,7 +19,11 @@ class GatewayHeatersModel with ChangeNotifier {
     setScanning = false;
     setDeploying = false;
     _heaters = List();
-    _nearDevices = List();
+    _nearDevices = [
+      NearDevice('Heater1', '[22:22:22]'),
+      NearDevice('Heater2', '[23:23:23]'),
+    ];
+    notifyListeners();
   }
 
   set setDevice(BluetoothDevice device) {

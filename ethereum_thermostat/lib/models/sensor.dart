@@ -7,9 +7,12 @@ class SensorModel with ChangeNotifier {
   int _heaterAssociate;
   int _sensorId;
   EthereumAddress _contractAddress;
+  bool _deployed;
   String _macAddress;
 
-  SensorModel(int sensorId) {
+  SensorModel(int sensorId, {EthereumAddress contractAddress, int heaterAssociate, String macAddress})
+      : _contractAddress = contractAddress, _heaterAssociate = heaterAssociate, _macAddress = macAddress
+  {
     _sensorId = sensorId;
   }
 
@@ -22,6 +25,8 @@ class SensorModel with ChangeNotifier {
   EthereumAddress get contractAddress => _contractAddress;
 
   String get macAddress => _macAddress;
+
+  bool get deployed => _deployed;
 
   set setContractAddress(EthereumAddress contractAddress) {
     _contractAddress = contractAddress;
@@ -45,6 +50,11 @@ class SensorModel with ChangeNotifier {
 
   set setSensorId(int sensorId) {
     _sensorId = sensorId;
+    notifyListeners();
+  }
+
+  set setDeployed(bool deployed) {
+    _deployed = deployed;
     notifyListeners();
   }
 

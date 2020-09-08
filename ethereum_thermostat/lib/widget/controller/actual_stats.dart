@@ -1,11 +1,11 @@
+import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:ethereumthermostat/utils/theme.dart';
 import 'package:flutter/material.dart';
 
 class ActualStats extends StatelessWidget {
-  final int actualThreshold;
-  final int actualTemp;
+  final ThermostatContract thermostatContract;
 
-  const ActualStats({Key key, this.actualThreshold, this.actualTemp})
+  const ActualStats({Key key, this.thermostatContract})
       : super(key: key);
 
   @override
@@ -32,7 +32,7 @@ class ActualStats extends StatelessWidget {
                       width: 10,
                     ),
                     Text(
-                      actualThreshold.toString(),
+                      thermostatContract.thresholdEnabled ? thermostatContract.threshold.toString() : '~',
                       style:
                           TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
                     ),
@@ -87,7 +87,7 @@ class ActualStats extends StatelessWidget {
                       width: 10,
                     ),
                     Text(
-                      actualTemp.toString(),
+                      thermostatContract.averageTemperature.toString(),
                       style: TextStyle(
                           fontSize: 40, fontWeight: FontWeight.bold),
                     ),
@@ -115,68 +115,5 @@ class ActualStats extends StatelessWidget {
           ),
         ],
       );
-      /*Flexible(
-        flex: 2,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 20.0),
-          child: Container(
-            child: Stack(
-              children: <Widget>[
-                Transform.rotate(
-                  angle: (2 * pi) * 0.25,
-                  child: Container(
-                    height: 360,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: Container(
-                        height: double.infinity,
-                        width: double.infinity,
-                        padding: EdgeInsets.all(65),
-                        child: Consumer<ThermostatControllerModel>(
-                            builder: (context, thermostat, child) {
-                          return CustomPaint(
-                            painter: Thermostat(
-                              currentTem: thermostat.currentThreshold,
-                            ),
-                          );
-                        })),
-                  ),
-                ),
-                Container(
-                  height: 360,
-                  width: double.infinity,
-                  color: Colors.transparent,
-                  child: ThermostatContainer(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      Consumer<ThermostatContract>(
-        builder: (context, thermostat, child) {
-          return Consumer<WalletModel>(builder: (context, wallet, child) {
-            return GestureDetector(
-              onTap: () {
-                //thermostat.shutDownFun(thermostat.shutDown ? false as BoolType : true as BoolType);
-                /*thermostat.setValue(wallet.web3client,
-                                    wallet.credentials, BigInt.from(3));*/
-              },
-              child: Icon(
-                Icons.power_settings_new,
-                color: Colors.red,
-                size: 40,
-              ),
-            );
-          });
-        },
-      ),
-      SizedBox(
-        height: 40,
-      ),
-    ]);*/
   }
 }
