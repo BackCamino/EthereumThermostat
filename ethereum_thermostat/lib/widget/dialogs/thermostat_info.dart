@@ -86,12 +86,20 @@ class ThermostatInfo extends StatelessWidget {
               },
               child: Text('Start'),
             ),
-            thermostat.thersholdInitialized ? OutlineButton(
-              onPressed: () async {
-                gatewaySensorsModel.requestReadySensors();
-              },
-              child: Text('Ready Sensors'),
-            ) : Container()
+            thermostat.thersholdInitialized ? Column(children: [
+              gatewayHeatersModel.deploying || gatewaySensorsModel.deploying ? CircularProgressIndicator() : OutlineButton(
+                onPressed: () async {
+                  gatewaySensorsModel.requestReadySensors();
+                },
+                child: Text('Ready temp sensors'),
+              ),
+              gatewayHeatersModel.deploying || gatewaySensorsModel.deploying ? Container() : OutlineButton(
+                onPressed: () async {
+                  gatewayHeatersModel.requestReadySensors();
+                },
+                child: Text('Ready heater sensors'),
+              ),
+            ],) : Container()
           ],)
               : Row(
             mainAxisAlignment: MainAxisAlignment.center,

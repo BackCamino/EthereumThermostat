@@ -142,7 +142,7 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
                                               signed: false, decimal: false),
                                       validate: true,
                                     ),
-                                    gatewayHeaters.scanning || gatewayHeaters.deploying || thermostatContract.processing
+                                    gatewayHeaters.scanning || gatewayHeaters.deploying || thermostatContract.processing || gatewaySensors.scanning || gatewaySensors.deploying || thermostatContract.processing
                                         ? Column(
                                       children: [
                                         CircularProgressIndicator(),
@@ -150,40 +150,31 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
                                           height: 20,
                                         ),
                                         Text(
-                                            'Gateway heater scanning/deploying')
+                                            'Scanning/deploying')
                                       ],
                                     )
-                                        : SensorsSection(
-                                      gatewaySensorsModel: gatewaySensors,
-                                      gatewayHeatersModel: gatewayHeaters,
-                                      callback: (sensor) {
-                                        setState(() {
-                                          sensorChosen = sensor;
-                                        });
-                                      },
-                                    ),
-                                    gatewaySensors.scanning ||
-                                            gatewaySensors.deploying ||
-                                            thermostatContract.processing
-                                        ? Column(
-                                            children: [
-                                              CircularProgressIndicator(),
-                                              SizedBox(
-                                                height: 20,
-                                              ),
-                                              Text(
-                                                  'Gateway sensor scanning/deploying')
-                                            ],
-                                          )
-                                        : HeaterSection(
-                                      gatewayHeatersModel: gatewayHeaters,
-                                      gatewaySensorsModel: gatewaySensors,
-                                      callback: (heater) {
-                                        setState(() {
-                                          heaterChosen = heater;
-                                        });
-                                      },
-                                    ),
+                                    : Column(
+                                      children: [
+                                        SensorsSection(
+                                          gatewaySensorsModel: gatewaySensors,
+                                          gatewayHeatersModel: gatewayHeaters,
+                                          callback: (sensor) {
+                                            setState(() {
+                                              sensorChosen = sensor;
+                                            });
+                                          },
+                                        ),
+                                        HeaterSection(
+                                          gatewayHeatersModel: gatewayHeaters,
+                                          gatewaySensorsModel: gatewaySensors,
+                                          callback: (heater) {
+                                            setState(() {
+                                              heaterChosen = heater;
+                                            });
+                                          },
+                                        )
+                                      ],
+                                    )
                                   ],
                                 ));
                           }),
@@ -256,7 +247,6 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
                     await Future.delayed(Duration(seconds: 5));
                   }
 
-
                   thermostatContract.addRoom(Room(
                     _keyTextEditingController.text,
                     roomIndex,
@@ -320,7 +310,7 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
   void deployNewHeater(int roomIndex, GatewayHeatersModel gatewayHeatersModel,
       ThermostatContract thermostatContract) async {
     final newHeater = HeaterModel(roomIndex);
-    newHeater.setMacAddress = sensorChosen;
+    newHeater.setMacAddress = heaterChosen;
     await gatewayHeatersModel.addNewHeater(
         newHeater, thermostatContract.hexAddress);
 

@@ -45,6 +45,8 @@ class ThermostatContract with ChangeNotifier {
   ContractEvent _shutDownChangedEvent;
   ContractEvent _thresholdChangedEvent;
   ContractEvent _thresholdEnabledEvent;
+  ContractEvent _thresholdDisabledEvent;
+  StreamSubscription<FilterEvent> _thresholdDisabledEventSubscription;
   StreamSubscription<FilterEvent> _thresholdEnabledEventSubscription;
   StreamSubscription<FilterEvent> _actualStatusChangedEventSubscription;
   StreamSubscription<FilterEvent> _actualTempChangedEventSubscription;
@@ -312,13 +314,14 @@ class ThermostatContract with ChangeNotifier {
 
   removeRoom(int roomId) async {
     rooms.removeWhere((element) => element.roomId == roomId);
+    notifyListeners();
     await SaverUtil().removeRoom(roomId);
     checkRoomsInitialized();
     notifyListeners();
   }
 
   void checkRoomsInitialized() {
-    if(rooms.length == 2) {
+    if(rooms.length == _roomsNumber) {
       setRoomsInitialized = true;
       settingRooms();
     }
@@ -416,6 +419,20 @@ class ThermostatContract with ChangeNotifier {
       print('Shutted down : ' + value.toString());
     });
 
+    _thresholdDisabledEvent = _contract.event('disabled');
+    _thresholdDisabledEventSubscription?.cancel();
+    _thresholdDisabledEventSubscription = _web3client
+        .events(FilterOptions.events(contract: contract, event: _thresholdDisabledEvent))
+        .listen((event) {
+      final decoded = _thresholdDisabledEvent.decodeResults(event.topics, event.data);
+
+      var value = decoded[0] as BigInt;
+      if(value.compareTo(BigInt.from(-1113449236)) == 0) {
+        setThresholdEnabled = false;
+        print('Disabled threshold function : ' + value.toString());
+      }
+    });
+
     _thresholdEnabledEvent = contract.event('enabled');
     _thresholdEnabledEventSubscription?.cancel();
     _thresholdEnabledEventSubscription = _web3client
@@ -445,7 +462,10 @@ class ThermostatContract with ChangeNotifier {
     setThresholdEnabled = true;
     setThreshold = 20;
 
-    setRoomsNumber = int.parse(await PreferencesUtil().getPrefString('rooms_number'));
+    final roomsNumberTemp = await PreferencesUtil().getPrefString('rooms_number');
+    if(roomsNumberTemp != null) {
+      setRoomsNumber = int.parse(roomsNumberTemp);
+    }
 
     checkIstance();
   }

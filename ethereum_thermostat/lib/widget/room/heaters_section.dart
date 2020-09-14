@@ -30,52 +30,50 @@ class HeaterSection extends StatelessWidget {
             ),
             Container(
               height: 120,
-              child: SingleChildScrollView(
-                child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount:
-                        gatewayHeatersModel
-                        .nearDevices.length
-                    , //gateway.nearDevices.length,
-                    itemBuilder: (context, index) {
-                      return Row(
-                        children: <Widget>[
-                          Padding(
-                            padding: EdgeInsets.all(10.0),
-                            child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                        color: gatewayHeatersModel
-                                            .nearDevices[index].selected
-                                            ? Colors.green
-                                            : Colors.transparent,
-                                        width: 2)),
-                                child: Padding(
-                                  padding: EdgeInsets.all(10),
-                                  child: GestureDetector(
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(gatewayHeatersModel.nearDevices[index].name),
-                                          SizedBox(
-                                            width: 20,
-                                          ),
-                                          Text('[' +
-                                              gatewayHeatersModel
-                                                  .nearDevices[index].address +
-                                              ']')
-                                        ],
-                                      ),
-                                      onTap: () {
-                                        gatewayHeatersModel.setSelectedHeater(index);
-                                        callback(gatewayHeatersModel.nearDevices[index].address);
-                                      }),
-                                )),
-                          ),
-                        ],
-                      );
-                    }),
-              ),
+              child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount:
+                  gatewayHeatersModel
+                      .nearDevices.length
+                  , //gateway.nearDevices.length,
+                  itemBuilder: (context, index) {
+                    return Row(
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.all(10.0),
+                          child: Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: gatewayHeatersModel
+                                          .nearDevices[index].selected
+                                          ? Colors.green
+                                          : Colors.transparent,
+                                      width: 2)),
+                              child: Padding(
+                                padding: EdgeInsets.all(10),
+                                child: GestureDetector(
+                                    child: Row(
+                                      children: <Widget>[
+                                        Text(gatewayHeatersModel.nearDevices[index].name),
+                                        SizedBox(
+                                          width: 20,
+                                        ),
+                                        Text('[' +
+                                            gatewayHeatersModel
+                                                .nearDevices[index].address +
+                                            ']')
+                                      ],
+                                    ),
+                                    onTap: () {
+                                      gatewayHeatersModel.setSelectedHeater(index);
+                                      callback(gatewayHeatersModel.nearDevices[index].address);
+                                    }),
+                              )),
+                        ),
+                      ],
+                    );
+                  }),
             ),
           ],
         );

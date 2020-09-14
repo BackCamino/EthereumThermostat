@@ -25,44 +25,43 @@ class SensorsSection extends StatelessWidget {
             ),
             Container(
               height: 120,
-              child: SingleChildScrollView(
-                child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: gatewaySensorsModel.nearDevices.length,
-                    itemBuilder: (context, index) {
-                      return Row(
-                        children: <Widget>[
-                          Padding(
-                            padding: EdgeInsets.all(10.0),
-                            child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: gatewaySensorsModel.nearDevices[index].selected ? Colors.green : Colors.transparent, width: 2)
+              child: ListView.builder(
+                  scrollDirection: Axis.vertical,
+                  shrinkWrap: true,
+                  itemCount: gatewaySensorsModel.nearDevices.length,
+                  itemBuilder: (context, index) {
+                    return Row(
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.all(10.0),
+                          child: Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: gatewaySensorsModel.nearDevices[index].selected ? Colors.green : Colors.transparent, width: 2)
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(10),
+                                child: GestureDetector(
+                                    child: Row(
+                                      children: <Widget>[
+                                        Text(gatewaySensorsModel.nearDevices[index].name),
+                                        SizedBox(
+                                          width: 20,
+                                        ),
+                                        Text('[' + gatewaySensorsModel.nearDevices[index].address + ']')
+                                      ],
+                                    ),
+                                    onTap: () async {
+                                      gatewaySensorsModel.setSelectedSensor(index);
+                                      callback(gatewaySensorsModel.nearDevices[index].address);
+                                    }
                                 ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(10),
-                                  child: GestureDetector(
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(gatewaySensorsModel.nearDevices[index].name),
-                                          SizedBox(
-                                            width: 20,
-                                          ),
-                                          Text('[' + gatewaySensorsModel.nearDevices[index].address + ']')
-                                        ],
-                                      ),
-                                      onTap: () async {
-                                        gatewaySensorsModel.setSelectedSensor(index);
-                                        callback(gatewaySensorsModel.nearDevices[index].address);
-                                      }
-                                  ),
-                                )
-                            ),
+                              )
                           ),
-                        ],
-                      );
-                    }),
-              ),
+                        ),
+                      ],
+                    );
+                  })
             ),
           ],
         );

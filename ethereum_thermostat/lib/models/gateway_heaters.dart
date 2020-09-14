@@ -64,7 +64,7 @@ class GatewayHeatersModel with ChangeNotifier {
   connectToDevice() async {
     bool isDisconnecting = false;
     try {
-      setConnection = await BluetoothConnection.toAddress(device.address);//device.address);
+      setConnection = await BluetoothConnection.toAddress(device.address);
       isDisconnecting = false;
       notifyListeners();
 
@@ -96,6 +96,9 @@ class GatewayHeatersModel with ChangeNotifier {
   }
 
   void _analyzeResponse(String response) {
+    if(response.compareTo('ready') == 0) {
+      setDeploying = false;
+    }
     if(response.compareTo('nodevice') != 0) {
       var subResponses = response.split('#');
       if(subResponses[0].compareTo('ok') == 0) {
@@ -116,6 +119,17 @@ class GatewayHeatersModel with ChangeNotifier {
     _connection.close();
     setScanning = false;
     notifyListeners();
+  }
+
+  requestReadySensors() async {
+    try {
+      setDeploying = true;
+      await connectToDevice();
+      _sendMessage('ready');
+    }
+    catch (ex) {
+      setDeploying = false;
+    }
   }
 
   setHeaterContractAddress(String heaterMacAddress, EthereumAddress heaterContractAddress) {
@@ -156,6 +170,7 @@ class GatewayHeatersModel with ChangeNotifier {
     message = message.trim();
     if (message.length > 0) {
       try {
+        print('Message ' + message);
         connection.output.add(utf8.encode(message));
         await connection.output.allSent;
         print('Message sent');

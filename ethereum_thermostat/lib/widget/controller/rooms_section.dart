@@ -16,7 +16,7 @@ class RoomsSection extends StatelessWidget {
     if(rooms != null) {
       if (rooms.length > 0) {
         return Container(
-          height: 200,
+          height: 320,
           margin: EdgeInsets.only(right: 30.0, top: 20.0, left: 30.0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
