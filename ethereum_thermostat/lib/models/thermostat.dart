@@ -539,6 +539,7 @@ class ThermostatContract with ChangeNotifier {
   Future<String> initializeSensorAddress(Credentials creds, EthereumAddress sensorAddress, BigInt sensorId) async {
     try {
       setTaskInfo(true, 'Initializing sensor address');
+      var gasPrice = await _web3client.getGasPrice();
       final transaction =  await _web3client.sendTransaction(
           creds,
           Transaction.callContract(
@@ -546,6 +547,7 @@ class ThermostatContract with ChangeNotifier {
             function: _initializeSensorAddress,
             parameters: [sensorAddress, sensorId],
             from: await creds.extractAddress(),
+            gasPrice: EtherAmount.inWei(gasPrice.getInWei * BigInt.from(10)),
             maxGas: 9000000,
           ), fetchChainIdFromNetworkId: true
       );
@@ -585,6 +587,7 @@ class ThermostatContract with ChangeNotifier {
   Future<String> initializeThreshold(Credentials creds, BigInt threshold) async {
     try {
       setTaskInfo(true, 'Initializing threshold');
+      var gasPrice = await _web3client.getGasPrice();
       final transaction =  await _web3client.sendTransaction(
           creds,
           Transaction.callContract(
@@ -592,6 +595,7 @@ class ThermostatContract with ChangeNotifier {
               function: _initializeThreshold,
               parameters: [threshold],
               from: await creds.extractAddress(),
+            gasPrice: EtherAmount.inWei(gasPrice.getInWei * BigInt.from(10)),
             maxGas: 9000000,
           ), fetchChainIdFromNetworkId: true
       );
@@ -614,6 +618,7 @@ class ThermostatContract with ChangeNotifier {
   Future<String> initializeHeaterAddress(Credentials creds, EthereumAddress heaterAddress, BigInt heaterId) async {
     try {
       setTaskInfo(true, 'Initializing heater address');
+      var gasPrice = await _web3client.getGasPrice();
       final transaction = await _web3client.sendTransaction(
           creds,
           Transaction.callContract(
@@ -621,6 +626,7 @@ class ThermostatContract with ChangeNotifier {
             function: _initializeHeaterAddress,
             parameters: [heaterAddress, heaterId],
             from: await creds.extractAddress(),
+            gasPrice: EtherAmount.inWei(gasPrice.getInWei * BigInt.from(10)),
             maxGas: 9000000,
           ), fetchChainIdFromNetworkId: true
       );
@@ -672,6 +678,7 @@ class ThermostatContract with ChangeNotifier {
   ) async {
     try {
       setTaskInfo(true, 'Changing threshold temp');
+      var gasPrice = await _web3client.getGasPrice();
       setThresholdEnabled = false;
       final transaction = await _web3client.sendTransaction(
           creds,
@@ -680,6 +687,7 @@ class ThermostatContract with ChangeNotifier {
             function: _changeThreshold,
             parameters: [BigInt.from(threshold)],
             from: await creds.extractAddress(),
+            gasPrice: EtherAmount.inWei(gasPrice.getInWei * BigInt.from(10)),
             maxGas: 9000000,
           ), fetchChainIdFromNetworkId: true
       );

@@ -111,7 +111,6 @@ class GatewaySensorsModel with ChangeNotifier {
       if(subResponses[0].compareTo('ok') == 0) {
         var acceptedResponse = subResponses[1].split('&');
         setSensorContractAddress(acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
-        setDeploying = false;
       }
       else {
         var addresses = response.split('#');
@@ -125,6 +124,7 @@ class GatewaySensorsModel with ChangeNotifier {
     }
     _connection.close();
     setScanning = false;
+    setDeploying = false;
     notifyListeners();
   }
 

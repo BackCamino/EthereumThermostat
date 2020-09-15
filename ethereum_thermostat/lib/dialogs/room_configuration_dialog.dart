@@ -240,6 +240,8 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
                     await Future.delayed(Duration(seconds: 5));
                   }
 
+                  await Future.delayed(Duration(seconds: 3));
+
                   // deploy new Sensor
                   deployNewSensor(roomIndex, gatewaySensor, thermostatContract);
 
