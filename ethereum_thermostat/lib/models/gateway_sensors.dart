@@ -1,8 +1,6 @@
-
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:ethereumthermostat/models/sensor.dart';
-import 'package:ethereumthermostat/models/thermostat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:web3dart/credentials.dart';
@@ -13,13 +11,11 @@ class GatewaySensorsModel with ChangeNotifier {
   BluetoothConnection _connection;
   List<NearDevice> _nearDevices;
   List<SensorModel> _sensors;
-  bool _deploying;
-  bool _scanning;
+  bool _processing;
 
   GatewaySensorsModel(BluetoothDevice device) {
     setDevice = device;
-    setScanning = false;
-    setDeploying = false;
+    setProcessing = false;
     _nearDevices = List();
     _sensors = List();
     notifyListeners();
@@ -35,13 +31,8 @@ class GatewaySensorsModel with ChangeNotifier {
     notifyListeners();
   }
 
-  set setScanning(bool scanning) {
-    _scanning = scanning;
-    notifyListeners();
-  }
-
-  set setDeploying(bool deploying) {
-    _deploying = deploying;
+  set setProcessing(bool processing) {
+    _processing = processing;
     notifyListeners();
   }
 
@@ -59,31 +50,20 @@ class GatewaySensorsModel with ChangeNotifier {
 
   bool get isConnected => _device.isConnected;
 
-  bool get scanning => _scanning;
-
-  bool get deploying => _deploying;
+  bool get processing => _processing;
 
   connectToDevice() async {
-    bool isDisconnecting = false;
-    try {
-      setConnection = await BluetoothConnection.toAddress(device.address);
-      isDisconnecting = false;
-      notifyListeners();
-
-      connection.input.listen((Uint8List data) {
-        _analyzeResponse(utf8.decode(data));
-      }).onDone(() {
-        if (isDisconnecting) {
-          print('Disconnecting locally!');
-        } else {
-          print('Disconnected remotely!');
-        }
-      });
-    } catch (ex) {
-      print('Connection problem : ' + ex.toString());
-      setDeploying = false;
-      setScanning = false;
+    if(connection.isConnected) {
+      await _connection.close();
     }
+    setConnection = await BluetoothConnection.toAddress(device.address);
+
+    var connectionStream = connection.input;
+    connectionStream.listen((Uint8List data) {
+      _analyzeResponse(utf8.decode(data));
+    }).onDone(() {
+      setProcessing = false;
+    });
   }
 
   void removeGateway() async {
@@ -102,7 +82,7 @@ class GatewaySensorsModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void _analyzeResponse(String response) {
+  Future<void> _analyzeResponse(String response) async {
     if(response.compareTo('ready') == 0) {
     print('Sensors initialized');
     }
@@ -122,20 +102,19 @@ class GatewaySensorsModel with ChangeNotifier {
         }
       }
     }
-    _connection.close();
-    setScanning = false;
-    setDeploying = false;
+    await _connection.close();
+    setProcessing = false;
     notifyListeners();
   }
 
   void getDevices() async {
     try {
-      setScanning = true;
+      setProcessing = true;
       await connectToDevice();
       clearDeviceList();
       _sendMessage('getdevices');
     } catch (ex) {
-      setScanning = false;
+      setProcessing = false;
       print('Request devices problem : ' + ex.toString());
     }
     notifyListeners();
@@ -158,38 +137,25 @@ class GatewaySensorsModel with ChangeNotifier {
 
   requestReadySensors() async {
     try {
+      setProcessing = true;
       await connectToDevice();
       _sendMessage('ready');
     }
     catch (ex) {
-
+      setProcessing = false;
+      print('Request ready sensor problem : ' + ex.toString());
     }
   }
 
   requestAddSensor(String sensorMacAddress, int sensorIndex, String thermostatAddress) async {
     try {
-      setDeploying = true;
+      setProcessing = true;
       await connectToDevice();
       _sendMessage('adds#' + sensorMacAddress + '&' + sensorIndex.toString() + '@' + thermostatAddress);
     }
     catch (ex) {
-      setDeploying = false;
+      setProcessing = false;
       print('Request add sensor problem : ' + ex.toString());
-    }
-    notifyListeners();
-  }
-
-  Future<void> sendReady(int roomIndex) async {
-    try {
-      if (connection == null || !connection.isConnected) {
-        await connectToDevice();
-        _sendMessage('ready#' + roomIndex.toString());
-      } else {
-        _sendMessage('ready#' + roomIndex.toString());
-      }
-    }
-    catch (ex) {
-      print(ex);
     }
     notifyListeners();
   }

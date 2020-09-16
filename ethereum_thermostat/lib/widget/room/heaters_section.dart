@@ -18,7 +18,7 @@ class HeaterSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (gatewaySensorsModel.device != null &&
         gatewayHeatersModel.device != null) {
-      if (!gatewaySensorsModel.scanning) {
+      if (!gatewaySensorsModel.processing) {
         return Column(
           children: <Widget>[
             OutlineButton(

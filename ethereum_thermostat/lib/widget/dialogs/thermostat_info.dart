@@ -83,23 +83,25 @@ class ThermostatInfo extends StatelessWidget {
             OutlineButton(
               onPressed: () async {
                 thermostat.initializeThreshold(wallet.credentials, BigInt.from(20));
+
+                while(thermostat.processing) {
+                  await Future.delayed(Duration(seconds: 5));
+                }
+
+                gatewayHeatersModel.requestReadyHeaters();
+
+                while(gatewayHeatersModel.processing) {
+                  await Future.delayed(Duration(seconds: 5));
+                }
+
+                gatewaySensorsModel.requestReadySensors();
+
+                while(gatewaySensorsModel.processing) {
+                  await Future.delayed(Duration(seconds: 5));
+                }
               },
               child: Text('Start'),
             ),
-            thermostat.thersholdInitialized ? Column(children: [
-              gatewayHeatersModel.deploying || gatewaySensorsModel.deploying ? CircularProgressIndicator() : OutlineButton(
-                onPressed: () async {
-                  gatewaySensorsModel.requestReadySensors();
-                },
-                child: Text('Ready temp sensors'),
-              ),
-              gatewayHeatersModel.deploying || gatewaySensorsModel.deploying ? Container() : OutlineButton(
-                onPressed: () async {
-                  gatewayHeatersModel.requestReadySensors();
-                },
-                child: Text('Ready heater sensors'),
-              ),
-            ],) : Container()
           ],)
               : Row(
             mainAxisAlignment: MainAxisAlignment.center,
