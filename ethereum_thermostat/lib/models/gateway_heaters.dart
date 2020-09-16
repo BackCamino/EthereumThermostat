@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:ethereumthermostat/models/gateway_sensors.dart';
@@ -53,15 +54,54 @@ class GatewayHeatersModel with ChangeNotifier {
   bool get processing => _processing;
 
   connectToDevice() async {
-    setConnection = await BluetoothConnection.toAddress(device.address);
+    try {
+      if(connection != null && connection.isConnected) {
+        await _connection.close();
+      }
+      setConnection = await BluetoothConnection.toAddress(device.address);
 
-    var connectionStream = connection.input;
-    connectionStream.listen((Uint8List data) {
-      _analyzeResponse(utf8.decode(data));
-    }).onDone(() {
+      var connectionStream = connection.input;
+      connectionStream.listen((Uint8List data) {
+        _analyzeResponse(utf8.decode(data));
+      }).onDone(() {
+        print('Connection with heater closed!');
+        setProcessing = false;
+      });
+    }
+    catch (ex) {
       setProcessing = false;
-    });
+      print('Connection problem with heater : ' + ex.toString());
+    }
   }
+  /*connectToDevice(String message) async {
+    Completer done = new Completer();
+    bool isDisconnecting = false;
+    try {
+      setConnection = await BluetoothConnection.toAddress(device.address);
+      isDisconnecting = false;
+      notifyListeners();
+
+      connection.input.listen((Uint8List data) async {
+        await _analyzeResponse(utf8.decode(data));
+      }).onDone(() {
+        if (isDisconnecting) {
+          print('Disconnecting locally!');
+        } else {
+          print('Disconnected remotely!');
+        }
+
+        done.complete();
+      });
+      await _sendMessage(message);
+
+    } catch (ex) {
+      print(ex);
+      setProcessing = false;
+      done.complete();
+    }
+
+    await done.future;
+  }*/
 
   void removeGateway() async {
     if (device != null) {
@@ -71,44 +111,47 @@ class GatewayHeatersModel with ChangeNotifier {
       }
       setDevice = null;
     }
-    notifyListeners();
   }
 
   Future<void> _analyzeResponse(String response) async {
     if (response.compareTo('ready') == 0) {
-      setProcessing = false;
+      print('Heaters initialized!');
     }
-    if (response.compareTo('nodevice') != 0) {
+    else if (response.compareTo('nodevice') != 0) {
       var subResponses = response.split('#');
       if (subResponses[0].compareTo('ok') == 0) {
         var acceptedResponse = subResponses[1].split('&');
         setHeaterContractAddress(
             acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
+        notifyListeners();
       } else {
         var addresses = response.split('#');
         for (String address in addresses) {
           if (address.isNotEmpty) {
             var addressPart = address.split('&');
             _nearDevices.add(NearDevice(addressPart[0], addressPart[1]));
+            notifyListeners();
           }
         }
       }
     }
     await _connection.close();
-    setProcessing = false;
-    notifyListeners();
   }
 
-  requestReadyHeaters() async {
+  /*requestReadyHeaters() async {
     try {
       setProcessing = true;
-      await connectToDevice();
-      _sendMessage('ready');
+      await connectToDevice('ready');
     }
     catch (ex) {
       setProcessing = false;
       print('Request ready heater problem : ' + ex.toString());
     }
+  }*/
+  requestReadyHeaters() async {
+    setProcessing = true;
+    await connectToDevice();
+    _sendMessage('ready');
   }
 
   setHeaterContractAddress(
@@ -125,22 +168,21 @@ class GatewayHeatersModel with ChangeNotifier {
         heaterModel.macAddress, heaterModel.heaterId, thermostatAddress);
   }
 
-  requestAddHeater(
-      String heaterMacAddress, int heaterId, String thermostatAddress) async {
+  /*requestAddHeater(String heaterMacAddress, int heaterId, String thermostatAddress) async {
     try {
       setProcessing = true;
-      await connectToDevice();
-      _sendMessage('addh#' +
-          heaterMacAddress +
-          '&' +
-          heaterId.toString() +
-          '@' +
-          thermostatAddress);
-    } catch (ex) {
+      await connectToDevice('addh#' + heaterMacAddress + '&' + heaterId.toString() + '@' + thermostatAddress);
+    }
+    catch (ex) {
       setProcessing = false;
       print('Request add heater problem : ' + ex.toString());
     }
     notifyListeners();
+  }*/
+  requestAddHeater(String heaterMacAddress, int heaterId, String thermostatAddress) async {
+    setProcessing = true;
+    await connectToDevice();
+    _sendMessage('addh#' + heaterMacAddress + '&' + heaterId.toString() + '@' + thermostatAddress);
   }
 
   clearDeviceList() {
@@ -148,29 +190,34 @@ class GatewayHeatersModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void getDevices() async {
+  /*getDevices() async {
     try {
       setProcessing = true;
-      await connectToDevice();
       clearDeviceList();
-      _sendMessage('getdevices');
+      await connectToDevice('getdevices');
     } catch (ex) {
       setProcessing = false;
-      print(ex);
+      print('Request devices problem : ' + ex.toString());
     }
     notifyListeners();
+  }*/
+  void getDevices() async {
+    setProcessing = true;
+    await connectToDevice();
+    clearDeviceList();
+    _sendMessage('getdevices');
   }
 
   void _sendMessage(String message) async {
     message = message.trim();
     if (message.length > 0) {
       try {
-        print('Message ' + message);
         connection.output.add(utf8.encode(message));
         await connection.output.allSent;
-        print('Message sent');
+        print('Message to heater sent!');
       } catch (e) {
-        print(e);
+        setProcessing = false;
+        print('Send message ($message) to heater problem : ' + e.toString());
       }
     }
   }

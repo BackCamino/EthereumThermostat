@@ -77,7 +77,7 @@ class ThermostatInfo extends StatelessWidget {
           SizedBox(
             height: 8,
           ),
-          thermostat.roomsInitialized
+          thermostat.roomsInitialized && !thermostat.thersholdInitialized
               ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 thermostat.processing ? CircularProgressIndicator() :
             OutlineButton(

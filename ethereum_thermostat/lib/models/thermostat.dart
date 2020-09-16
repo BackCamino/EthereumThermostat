@@ -54,6 +54,14 @@ class ThermostatContract with ChangeNotifier {
   StreamSubscription<FilterEvent> _shutDownChangedEventSubscription;
   StreamSubscription<FilterEvent> _thresholdChangedEventSubscription;
 
+  static const String demoContractAddress = '0x04D9811d5ECc66896DE1aeB2e2474FC043b83222';
+  static const String demoSensor0Address = '0x4eF37F30b9F3aB31092d320C0D94b1ce15a1EBa6';
+  static const String demoSensor1Address = '0x15Db0fbA4fe7DCb94F4b93f0ecc07FBb7EE52131';
+  static const String demoHeater0Address = '0x2af54A206D2EaEa4ADDC5eE6489DfB3bdf072Cc5';
+  static const String demoHeater1Address = '0xc7e08392aE35CD9903B2915c1C310B115AC3E548';
+  static const int demoRoomNumber = 2;
+  bool _demoMode;
+
   DeployedContract _contract;
   List<Room> rooms;
   bool _shutDown;
@@ -65,12 +73,18 @@ class ThermostatContract with ChangeNotifier {
 
   ThermostatContract(Web3Client client,){
     _web3client = client;
-    _init();
+    //_init();
+    _initDemo();
   }
 
   //          set
   set setShutDown(bool shutDown) {
     _shutDown = shutDown;
+    notifyListeners();
+  }
+
+  set setDemoMode(bool demoMode) {
+    _demoMode = demoMode;
     notifyListeners();
   }
 
@@ -447,20 +461,24 @@ class ThermostatContract with ChangeNotifier {
           }
     });
 
-    getRooms();
+    if(!_demoMode) {
+      getRooms();
+    } else {
+      checkRoomsInitialized();
+    }
     notifyListeners();
   }
 
   /// Initialize
   _init() async {
+    setDemoMode = false;
     rooms = List();
     notifyListeners();
 
-    setThresholdInitialized = true;
     setInitialized = false;
     setRoomsInitialized = false;
     setThresholdEnabled = true;
-    setThreshold = 20;
+    setThreshold = 0;
 
     final roomsNumberTemp = await PreferencesUtil().getPrefString('rooms_number');
     if(roomsNumberTemp != null) {
@@ -468,6 +486,54 @@ class ThermostatContract with ChangeNotifier {
     }
 
     checkIstance();
+  }
+
+  /// Initialize
+  _initDemo() async {
+    setDemoMode = true;
+    rooms = [
+      Room(
+          'Stanza 1',
+          0,
+          sensorModel: SensorModel(
+              0,
+              contractAddress: EthereumAddress.fromHex(demoSensor0Address),
+              heaterAssociate: 0,
+              macAddress: '98:D3:91:FD:BC:1D' ),
+          heaterModel: HeaterModel(
+            0,
+            contractAddress: EthereumAddress.fromHex(demoHeater0Address),
+            sensorAssociate: 0,
+            macAddress: '98:D3:C1:FD:85:30' )
+      ),
+      Room(
+        'Stanza 2',
+        1,
+        sensorModel: SensorModel(
+          1,
+          contractAddress: EthereumAddress.fromHex(demoSensor1Address),
+          heaterAssociate: 1,
+          macAddress: '98:D3:51:FD:F9:E9'
+        ),
+        heaterModel: HeaterModel(
+          1,
+          contractAddress: EthereumAddress.fromHex(demoHeater1Address),
+          sensorAssociate: 1,
+          macAddress: '98:D3:11:FC:5D:34'
+        )
+      )
+    ];
+    notifyListeners();
+
+    setThresholdInitialized = true;
+    setInitialized = false;
+    setRoomsInitialized = true;
+    setThresholdEnabled = true;
+    setThreshold = 20;
+    setRoomsNumber = demoRoomNumber;
+    setHexAddress = demoContractAddress;
+    setEthAddress = EthereumAddress.fromHex(demoContractAddress);
+    deployExistingContract();
   }
 
   getRooms() async {
@@ -756,6 +822,9 @@ class ThermostatContract with ChangeNotifier {
         var actualStatus = heaterResult[2] as BigInt;
 
         setThreshold = actualThreshold.toInt();
+        if(_threshold != 0) {
+          setThresholdInitialized = true;
+        }
         room.sensor.setTemp = actualTemp.toInt();
         room.heater.setHeaterStatus = actualStatus.toInt();
 
