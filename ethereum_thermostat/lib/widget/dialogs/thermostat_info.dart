@@ -77,8 +77,8 @@ class ThermostatInfo extends StatelessWidget {
           SizedBox(
             height: 8,
           ),
-          thermostat.roomsInitialized && !thermostat.thersholdInitialized
-              ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          //thermostat.roomsInitialized && !thermostat.thersholdInitialized
+              /*?*/ Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 thermostat.processing ? CircularProgressIndicator() :
             OutlineButton(
               onPressed: () async {
@@ -103,7 +103,8 @@ class ThermostatInfo extends StatelessWidget {
               child: Text('Start'),
             ),
           ],)
-              : Row(
+              ,//: Container(),
+          !thermostat.roomsInitialized ? Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               GestureDetector(
@@ -115,7 +116,7 @@ class ThermostatInfo extends StatelessWidget {
                         RoomsConfigurationDialog()),
               ),
             ],
-          ),
+          ) : Container(),
           SizedBox(
             height: 20,
           ),

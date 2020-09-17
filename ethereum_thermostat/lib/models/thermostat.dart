@@ -73,8 +73,8 @@ class ThermostatContract with ChangeNotifier {
 
   ThermostatContract(Web3Client client,){
     _web3client = client;
-    //_init();
-    _initDemo();
+    _init();
+    //_initDemo();
   }
 
   //          set
@@ -478,6 +478,7 @@ class ThermostatContract with ChangeNotifier {
     setInitialized = false;
     setRoomsInitialized = false;
     setThresholdEnabled = true;
+    setThresholdInitialized = false;
     setThreshold = 0;
 
     final roomsNumberTemp = await PreferencesUtil().getPrefString('rooms_number');
