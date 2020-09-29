@@ -44,7 +44,7 @@ class _GatewayTypeDialogState extends State<GatewayTypeDialog> with TickerProvid
                           child: Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Container(
-                                  height: 400,
+                                  height: 200,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: const BorderRadius.all(

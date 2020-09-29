@@ -26,9 +26,11 @@ class _ThermostatGatewayState extends State<ThermostatGateway> {
     _streamSubscription =
         FlutterBluetoothSerial.instance.startDiscovery().listen((r) {
       if (r.device.name != null && r.device.address != null) {
-        setState(() {
-          results.add(r);
-        });
+        if(r.device.name.contains('gateway')) {
+          setState(() {
+            results.add(r);
+          });
+        }
       }
     });
 

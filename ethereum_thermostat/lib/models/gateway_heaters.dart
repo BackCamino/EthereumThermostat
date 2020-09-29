@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:ethereumthermostat/models/gateway_sensors.dart';
@@ -11,13 +12,11 @@ class GatewayHeatersModel with ChangeNotifier {
   BluetoothConnection _connection;
   List<NearDevice> _nearDevices;
   List<HeaterModel> _heaters;
-  bool _deploying;
-  bool _scanning;
+  bool _processing;
 
   GatewayHeatersModel(BluetoothDevice device) {
     setDevice = device;
-    setScanning = false;
-    setDeploying = false;
+    setProcessing = false;
     _heaters = List();
     _nearDevices = List();
     notifyListeners();
@@ -33,13 +32,8 @@ class GatewayHeatersModel with ChangeNotifier {
     notifyListeners();
   }
 
-  set setScanning(bool scanning) {
-    _scanning = scanning;
-    notifyListeners();
-  }
-
-  set setDeploying(bool deploying) {
-    _deploying = deploying;
+  set setProcessing(bool processing) {
+    _processing = processing;
     notifyListeners();
   }
 
@@ -57,125 +51,173 @@ class GatewayHeatersModel with ChangeNotifier {
 
   bool get isConnected => _device.isConnected;
 
-  bool get scanning => _scanning;
-
-  bool get deploying => _deploying;
+  bool get processing => _processing;
 
   connectToDevice() async {
+    try {
+      if(connection != null && connection.isConnected) {
+        await _connection.close();
+      }
+      setConnection = await BluetoothConnection.toAddress(device.address);
+
+      var connectionStream = connection.input;
+      connectionStream.listen((Uint8List data) {
+        _analyzeResponse(utf8.decode(data));
+      }).onDone(() {
+        print('Connection with heater closed!');
+        setProcessing = false;
+      });
+    }
+    catch (ex) {
+      setProcessing = false;
+      print('Connection problem with heater : ' + ex.toString());
+    }
+  }
+  /*connectToDevice(String message) async {
+    Completer done = new Completer();
     bool isDisconnecting = false;
     try {
       setConnection = await BluetoothConnection.toAddress(device.address);
       isDisconnecting = false;
       notifyListeners();
 
-      connection.input.listen((Uint8List data) {
-        _analyzeResponse(utf8.decode(data));
+      connection.input.listen((Uint8List data) async {
+        await _analyzeResponse(utf8.decode(data));
       }).onDone(() {
         if (isDisconnecting) {
           print('Disconnecting locally!');
         } else {
           print('Disconnected remotely!');
         }
+
+        done.complete();
       });
+      await _sendMessage(message);
+
     } catch (ex) {
       print(ex);
-      setDeploying = false;
-      setScanning = false;
+      setProcessing = false;
+      done.complete();
     }
-  }
+
+    await done.future;
+  }*/
 
   void removeGateway() async {
     if (device != null) {
       if (connection != null) {
-        await connection.close();
+        await _connection.close();
         setConnection = null;
       }
       setDevice = null;
     }
-    notifyListeners();
   }
 
-  void _analyzeResponse(String response) {
-    if(response.compareTo('ready') == 0) {
-      setDeploying = false;
+  Future<void> _analyzeResponse(String response) async {
+    if (response.compareTo('ready') == 0) {
+      print('Heaters initialized!');
     }
-    if(response.compareTo('nodevice') != 0) {
+    else if (response.compareTo('nodevice') != 0) {
       var subResponses = response.split('#');
-      if(subResponses[0].compareTo('ok') == 0) {
+      if (subResponses[0].compareTo('ok') == 0) {
         var acceptedResponse = subResponses[1].split('&');
-        setHeaterContractAddress(acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
-      }
-      else {
+        setHeaterContractAddress(
+            acceptedResponse[0], EthereumAddress.fromHex(acceptedResponse[1]));
+        notifyListeners();
+      } else {
         var addresses = response.split('#');
-        for(String address in addresses) {
-          if(address.isNotEmpty) {
+        for (String address in addresses) {
+          if (address.isNotEmpty) {
             var addressPart = address.split('&');
             _nearDevices.add(NearDevice(addressPart[0], addressPart[1]));
+            notifyListeners();
           }
         }
       }
     }
-    _connection.close();
-    setScanning = false;
-    setDeploying = false;
-    notifyListeners();
+    await _connection.close();
   }
 
-  requestReadySensors() async {
+  /*requestReadyHeaters() async {
     try {
-      setDeploying = true;
-      await connectToDevice();
-      _sendMessage('ready');
+      setProcessing = true;
+      await connectToDevice('ready');
     }
     catch (ex) {
-      setDeploying = false;
+      setProcessing = false;
+      print('Request ready heater problem : ' + ex.toString());
     }
+  }*/
+  requestReadyHeaters() async {
+    setProcessing = true;
+    await connectToDevice();
+    _sendMessage('ready');
   }
 
-  setHeaterContractAddress(String heaterMacAddress, EthereumAddress heaterContractAddress) {
-    _heaters.where((heater) => heater.macAddress == heaterMacAddress).first.setContractAddress = heaterContractAddress;
+  setHeaterContractAddress(
+      String heaterMacAddress, EthereumAddress heaterContractAddress) {
+    _heaters
+        .where((heater) => heater.macAddress == heaterMacAddress)
+        .first
+        .setContractAddress = heaterContractAddress;
   }
 
   addNewHeater(HeaterModel heaterModel, String thermostatAddress) async {
     _heaters.add(heaterModel);
-    requestAddHeater(heaterModel.macAddress, heaterModel.heaterId,  thermostatAddress);
+    requestAddHeater(
+        heaterModel.macAddress, heaterModel.heaterId, thermostatAddress);
   }
 
-  requestAddHeater(String heaterMacAddress, int heaterId, String thermostatAddress) async {
+  /*requestAddHeater(String heaterMacAddress, int heaterId, String thermostatAddress) async {
     try {
-      setDeploying = true;
-      await connectToDevice();
-      _sendMessage('addh#' + heaterMacAddress + '&' + heaterId.toString() + '@' + thermostatAddress);
+      setProcessing = true;
+      await connectToDevice('addh#' + heaterMacAddress + '&' + heaterId.toString() + '@' + thermostatAddress);
     }
     catch (ex) {
-      setDeploying = false;
+      setProcessing = false;
       print('Request add heater problem : ' + ex.toString());
     }
     notifyListeners();
+  }*/
+  requestAddHeater(String heaterMacAddress, int heaterId, String thermostatAddress) async {
+    setProcessing = true;
+    await connectToDevice();
+    _sendMessage('addh#' + heaterMacAddress + '&' + heaterId.toString() + '@' + thermostatAddress);
   }
 
-  void getDevices() async {
+  clearDeviceList() {
+    _nearDevices.clear();
+    notifyListeners();
+  }
+
+  /*getDevices() async {
     try {
-      setScanning = true;
-      await connectToDevice();
-      _sendMessage('getdevices');
+      setProcessing = true;
+      clearDeviceList();
+      await connectToDevice('getdevices');
     } catch (ex) {
-      setScanning = false;
-      print(ex);
+      setProcessing = false;
+      print('Request devices problem : ' + ex.toString());
     }
     notifyListeners();
+  }*/
+  void getDevices() async {
+    setProcessing = true;
+    await connectToDevice();
+    clearDeviceList();
+    _sendMessage('getdevices');
   }
 
   void _sendMessage(String message) async {
     message = message.trim();
     if (message.length > 0) {
       try {
-        print('Message ' + message);
         connection.output.add(utf8.encode(message));
         await connection.output.allSent;
-        print('Message sent');
+        print('Message to heater sent!');
       } catch (e) {
-        print(e);
+        setProcessing = false;
+        print('Send message ($message) to heater problem : ' + e.toString());
       }
     }
   }

@@ -13,7 +13,7 @@ class SensorsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (gatewaySensorsModel.device != null) {
-      if (!gatewayHeatersModel.scanning) {
+      if (!gatewayHeatersModel.processing) {
         return Column(
           children: <Widget>[
             OutlineButton(

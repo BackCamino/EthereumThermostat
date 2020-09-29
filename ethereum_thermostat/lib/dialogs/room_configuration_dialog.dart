@@ -13,7 +13,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
-import 'package:web3dart/credentials.dart';
 
 class RoomsConfigurationDialog extends StatefulWidget {
   @override
@@ -30,6 +29,8 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
   TextEditingController _roomIndexTextEditingController;
   String sensorChosen = '';
   String heaterChosen = '';
+  bool heaterDeployProblem;
+  bool sensorDeployProblem;
 
   var logger = Logger();
 
@@ -47,6 +48,8 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
     animationController = new AnimationController(
         duration: const Duration(milliseconds: 400), vsync: this);
     animationController.forward();
+    heaterDeployProblem = false;
+    sensorDeployProblem = false;
     super.initState();
   }
 
@@ -142,7 +145,7 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
                                               signed: false, decimal: false),
                                       validate: true,
                                     ),
-                                    gatewayHeaters.scanning || gatewayHeaters.deploying || thermostatContract.processing || gatewaySensors.scanning || gatewaySensors.deploying || thermostatContract.processing
+                                    gatewayHeaters.processing || thermostatContract.processing || gatewaySensors.processing || thermostatContract.processing
                                         ? Column(
                                       children: [
                                         CircularProgressIndicator(),
@@ -200,13 +203,7 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
 
   Widget _addRoomButton(ThermostatContract thermostatContract,
       GatewaySensorsModel gatewaySensor, GatewayHeatersModel gatewayHeater) {
-    if (gatewaySensor.deploying) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [CircularProgressIndicator()],
-      );
-    } else {
-      return Padding(
+    return Padding(
         padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
         child: Container(
           height: 48,
@@ -236,7 +233,7 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
 
                   deployNewHeater(roomIndex, gatewayHeater, thermostatContract);
 
-                  while (gatewayHeater.deploying || thermostatContract.processing) {
+                  while (gatewayHeater.processing || thermostatContract.processing) {
                     await Future.delayed(Duration(seconds: 5));
                   }
 
@@ -245,22 +242,26 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
                   // deploy new Sensor
                   deployNewSensor(roomIndex, gatewaySensor, thermostatContract);
 
-                  while (gatewaySensor.deploying || thermostatContract.processing) {
+                  while (gatewaySensor.processing || thermostatContract.processing) {
                     await Future.delayed(Duration(seconds: 5));
                   }
 
-                  thermostatContract.addRoom(Room(
-                    _keyTextEditingController.text,
-                    roomIndex,
-                    sensorModel: gatewaySensor
-                        .sensors
-                        .where((element) => element.sensorId == roomIndex)
-                        .first,
-                    heaterModel: gatewayHeater
-                        .heaters
-                        .where((element) => element.heaterId == roomIndex)
-                        .first
-                  ));
+                  await Future.delayed(Duration(seconds: 4));
+
+                  if(!sensorDeployProblem && !heaterDeployProblem) {
+                    thermostatContract.addRoom(Room(
+                        _keyTextEditingController.text,
+                        roomIndex,
+                        sensorModel: gatewaySensor
+                            .sensors
+                            .where((element) => element.sensorId == roomIndex)
+                            .first,
+                        heaterModel: gatewayHeater
+                            .heaters
+                            .where((element) => element.heaterId == roomIndex)
+                            .first
+                    ));
+                  }
                 } else {
                   print('Heater or sensor not chosen!');
                 }
@@ -278,7 +279,6 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
           ),
         ),
       );
-    }
   }
 
   void deployNewSensor(int roomIndex, GatewaySensorsModel gatewaySensorsModel,
@@ -287,9 +287,21 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
     newSensor.setMacAddress = sensorChosen;
     gatewaySensorsModel.addNewSensor(newSensor, thermostatContract.hexAddress);
 
-    while (gatewaySensorsModel.deploying || thermostatContract.processing) {
+    while (gatewaySensorsModel.processing || thermostatContract.processing) {
       print('Deploying sensor contract...');
       await Future.delayed(Duration(seconds: 5));
+    }
+
+    if(gatewaySensorsModel.sensors
+        .where((element) => element.sensorId == roomIndex)
+        .first
+        .contractAddress == null) {
+      logger.e('Error while creating sensor contract!');
+      setState(() {
+        sensorDeployProblem = true;
+      });
+      gatewaySensorsModel.setProcessing = false;
+      return;
     }
 
     logger.i('Sensor ' +
@@ -316,10 +328,23 @@ class _RoomsConfigurationDialogState extends State<RoomsConfigurationDialog>
     await gatewayHeatersModel.addNewHeater(
         newHeater, thermostatContract.hexAddress);
 
-    while (gatewayHeatersModel.deploying || thermostatContract.processing) {
+    while (gatewayHeatersModel.processing || thermostatContract.processing) {
       print('Deploying heater contract...');
       await Future.delayed(Duration(seconds: 5));
     }
+
+    if(gatewayHeatersModel.heaters
+        .where((element) => element.heaterId == roomIndex)
+        .first
+        .contractAddress == null) {
+      logger.e('Error while creating heater contract!');
+      setState(() {
+        heaterDeployProblem = true;
+      });
+      gatewayHeatersModel.setProcessing = false;
+      return;
+    }
+
     logger.i('Heater ' +
         gatewayHeatersModel.heaters
             .where((element) => element.heaterId == roomIndex)
