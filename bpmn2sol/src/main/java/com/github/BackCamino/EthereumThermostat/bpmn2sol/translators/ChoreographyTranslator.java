@@ -1315,7 +1315,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 setterFunction.addStatement(new EnableAssociationsFor.EnabledCycleRequire());
 
                 //TODO check next
-                enableAssociationsFor.addStatementInIf(new Comment("TODO call next"));
+                //enableAssociationsFor.addStatementInIf(new Comment("TODO call next"));
                 //NEXT
                 if (ChoreographyTask.isChoreographyTask(next)) {
                     ChoreographyTask nextTask = new ChoreographyTask(next, this.getModel());
@@ -1561,13 +1561,13 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
                 List<Event> events = EventParser.parseEvents(variables, initialContract);
                 //events.forEach(targetContract::addEvent);
 
-                setterFunction.addStatement(new Comment("TODO check enabling or if the sender is the correct contract")); //TODO
+                //setterFunction.addStatement(new Comment("TODO check enabling or if the sender is the correct contract")); //TODO
                 String senderContract = capitalize(initialContract.getName()) + "(msg.sender)";
                 String senderContractValues = "getValues(" + senderContract + ")";
 
                 setterFunction.addStatement(new Statement("Association storage association = getAssociation(" + senderContract + ");"));
                 addAssignments(setterFunction, cleanedVariables, events, senderContractValues, senderContract);
-                setterFunction.addStatement(new Comment("TODO call next (initial is mi)"));
+                //setterFunction.addStatement(new Comment("TODO call next (initial is mi)"));
 
                 //TODO check next
                 //NEXT //TODO probably all wrong
@@ -1660,10 +1660,10 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
             } else { //if initial is not mi
                 List<Event> events = EventParser.parseEvents(message);
                 setterFunction.addModifier(OwnedContract.onlyAddressModifier(), new Value("address(" + decapitalize(initialContract.getName()) + ")"));
-                setterFunction.addStatement(new Comment("TODO check enabling(?)")); //TODO
+                //setterFunction.addStatement(new Comment("TODO check enabling(?)")); //TODO
 
                 addAssignments(setterFunction, cleanedVariables, events, null, null);
-                setterFunction.addStatement(new Comment("TODO call next (initial is not mi)"));
+                //setterFunction.addStatement(new Comment("TODO call next (initial is not mi)"));
 
                 //TODO check next
                 //NEXT
@@ -1750,7 +1750,7 @@ public class ChoreographyTranslator extends Bpmn2SolidityTranslator {
 
             //sender function
             if (isMultiInstance(task.getParticipantRef())) {  //if target is mi
-                senderFunction.addStatement(new Comment("TODO check sender (not if is internal)"));
+                //senderFunction.addStatement(new Comment("TODO check sender (not if is internal)"));
                 EnableAssociationsFor enableAssociationsFor = new EnableAssociationsFor(hash);
                 //send
                 Statement sendStatement = new Statement("get" + targetContract.getName() + "(associations[i])." + messageName + "(" + sendValuesString + ");");
